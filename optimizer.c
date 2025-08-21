@@ -41,29 +41,35 @@ void analyze_variable_usage(ASTNode *node, VariableTable *table) {
     switch (node->type) {
         case NODE_DECLARATION: {
             DeclarationNode *decl = (DeclarationNode*)node;
-            add_variable(table, decl->name);
-            VariableInfo *var = find_variable(table, decl->name);
-            if (var) {
-                var->is_defined = 1;
+            if (decl->name) {
+                add_variable(table, decl->name);
+                VariableInfo *var = find_variable(table, decl->name);
+                if (var) {
+                    var->is_defined = 1;
+                }
             }
             analyze_variable_usage(decl->initial_value, table);
             break;
         }
         case NODE_ASSIGNMENT: {
             AssignmentNode *assign = (AssignmentNode*)node;
-            add_variable(table, assign->variable);
-            VariableInfo *var = find_variable(table, assign->variable);
-            if (var) {
-                var->is_defined = 1;
+            if (assign->variable) {
+                add_variable(table, assign->variable);
+                VariableInfo *var = find_variable(table, assign->variable);
+                if (var) {
+                    var->is_defined = 1;
+                }
             }
             analyze_variable_usage(assign->value, table);
             break;
         }
         case NODE_IDENTIFIER: {
             IdentifierNode *id = (IdentifierNode*)node;
-            VariableInfo *var = find_variable(table, id->name);
-            if (var) {
-                var->is_used = 1;
+            if (id->name) {
+                VariableInfo *var = find_variable(table, id->name);
+                if (var) {
+                    var->is_used = 1;
+                }
             }
             break;
         }
@@ -102,7 +108,9 @@ void analyze_variable_usage(ASTNode *node, VariableTable *table) {
         }
         case NODE_COMPOUND_STATEMENT: {
             CompoundNode *comp = (CompoundNode*)node;
-            analyze_variable_usage(comp->statements, table);
+            if (comp->statements) {
+                analyze_variable_usage(comp->statements, table);
+            }
             break;
         }
         case NODE_RETURN: {
@@ -135,8 +143,10 @@ void mark_dead_code(ASTNode *node) {
                 }
             } else if (is_condition_always_false(if_node->condition)) {
                 // Marcar then como código morto
-                if_node->then_statement->is_dead_code = 1;
-                mark_dead_code(if_node->then_statement);
+                if (if_node->then_statement) {
+                    if_node->then_statement->is_dead_code = 1;
+                    mark_dead_code(if_node->then_statement);
+                }
             }
             
             mark_dead_code(if_node->condition);
@@ -149,8 +159,10 @@ void mark_dead_code(ASTNode *node) {
             
             // Se a condição é sempre falsa, marcar o corpo como código morto
             if (is_condition_always_false(while_node->condition)) {
-                while_node->body->is_dead_code = 1;
-                mark_dead_code(while_node->body);
+                if (while_node->body) {
+                    while_node->body->is_dead_code = 1;
+                    mark_dead_code(while_node->body);
+                }
             }
             
             mark_dead_code(while_node->condition);
@@ -174,7 +186,9 @@ void mark_dead_code(ASTNode *node) {
         }
         case NODE_COMPOUND_STATEMENT: {
             CompoundNode *comp = (CompoundNode*)node;
-            mark_dead_code(comp->statements);
+            if (comp->statements) {
+                mark_dead_code(comp->statements);
+            }
             break;
         }
         case NODE_RETURN: {
@@ -209,19 +223,23 @@ void mark_unused_variables(ASTNode *node, VariableTable *table) {
     switch (node->type) {
         case NODE_DECLARATION: {
             DeclarationNode *decl = (DeclarationNode*)node;
-            VariableInfo *var = find_variable(table, decl->name);
-            if (var && var->is_defined && !var->is_used) {
-                node->is_dead_code = 1;
-                printf("Variável não utilizada marcada como código morto: %s\n", decl->name);
+            if (decl->name) {
+                VariableInfo *var = find_variable(table, decl->name);
+                if (var && var->is_defined && !var->is_used) {
+                    node->is_dead_code = 1;
+                    printf("Variável não utilizada marcada como código morto: %s\n", decl->name);
+                }
             }
             break;
         }
         case NODE_ASSIGNMENT: {
             AssignmentNode *assign = (AssignmentNode*)node;
-            VariableInfo *var = find_variable(table, assign->variable);
-            if (var && var->is_defined && !var->is_used) {
-                node->is_dead_code = 1;
-                printf("Atribuição para variável não utilizada marcada como código morto: %s\n", assign->variable);
+            if (assign->variable) {
+                VariableInfo *var = find_variable(table, assign->variable);
+                if (var && var->is_defined && !var->is_used) {
+                    node->is_dead_code = 1;
+                    printf("Atribuição para variável não utilizada marcada como código morto: %s\n", assign->variable);
+                }
             }
             break;
         }
@@ -333,14 +351,21 @@ int has_break_continue(ASTNode *node) {
 // Funções auxiliares
 VariableTable* create_variable_table() {
     VariableTable *table = malloc(sizeof(VariableTable));
+    if (!table) {
+        return NULL;
+    }
     table->capacity = 10;
     table->count = 0;
     table->variables = malloc(sizeof(VariableInfo) * table->capacity);
+    if (!table->variables) {
+        free(table);
+        return NULL;
+    }
     return table;
 }
 
 void add_variable(VariableTable *table, char *name) {
-    if (find_variable(table, name) != NULL) return;
+    if (name == NULL || find_variable(table, name) != NULL) return;
     
     if (table->count >= table->capacity) {
         table->capacity *= 2;
@@ -355,8 +380,10 @@ void add_variable(VariableTable *table, char *name) {
 }
 
 VariableInfo* find_variable(VariableTable *table, char *name) {
+    if (name == NULL) return NULL;
+    
     for (int i = 0; i < table->count; i++) {
-        if (strcmp(table->variables[i].variable, name) == 0) {
+        if (table->variables[i].variable && strcmp(table->variables[i].variable, name) == 0) {
             return &table->variables[i];
         }
     }

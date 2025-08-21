@@ -8,7 +8,7 @@ int yyparse(void);
 ASTNode *global_ast = NULL;
 
 int main() {
-    printf("=== Tiny-Opt Compiler com Otimizador ===\n");
+    printf("=== Tiny-Opt Compiler ===\n");
     printf("Digite o código C:\n");
     
     // Criar nó raiz do programa

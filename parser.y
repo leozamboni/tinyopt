@@ -47,7 +47,7 @@ int asprintf(char **strp, const char *fmt, ...) {
 %type <node> expression statement declaration assignment
 %type <node> condition compound_statement
 %type <node> if_statement while_statement for_statement
-%type <node> program
+%type <node> program compound_program
 
 %left AND OR
 %left EQ NE
@@ -77,8 +77,7 @@ statement:
     | compound_statement      { $$ = $1; }
     | RETURN expression ';'   { 
         $$ = create_return_node($2);
-        printf("return %s\n", $2 ? "expression" : "void");
-        if ($2) free($2);
+        printf("return expression\n");
     }
     | BREAK ';'               { 
         $$ = create_control_node(1);
@@ -255,29 +254,51 @@ for_statement:
     ;
 
 compound_statement:
-    '{' program '}' { 
-        $$ = create_compound_node($2);
+    '{' compound_program '}' { 
+        ProgramNode *prog = (ProgramNode*)$2;
+        $$ = create_compound_node(prog->statements);
         printf("bloco de código\n");
+        // Set statements to NULL to avoid double-freeing
+        prog->statements = NULL;
+    }
+    ;
+
+compound_program:
+    compound_program statement { 
+        if ($2) {
+            add_statement($1, $2);
+        }
+        $$ = $1;
+    }
+    | /* vazio */
+    {
+        $$ = create_program_node();
     }
     ;
 
 condition:
       expression EQ expression { 
+        printf("Criando condição EQ\n");
         $$ = create_condition_node(OP_EQ, $1, $3);
     }
     | expression NE expression { 
+        printf("Criando condição NE\n");
         $$ = create_condition_node(OP_NE, $1, $3);
     }
     | expression '<' expression { 
+        printf("Criando condição LT\n");
         $$ = create_condition_node(OP_LT, $1, $3);
     }
     | expression LE expression { 
+        printf("Criando condição LE\n");
         $$ = create_condition_node(OP_LE, $1, $3);
     }
     | expression '>' expression { 
+        printf("Criando condição GT\n");
         $$ = create_condition_node(OP_GT, $1, $3);
     }
     | expression GE expression { 
+        printf("Criando condição GE\n");
         $$ = create_condition_node(OP_GE, $1, $3);
     }
     | condition AND condition { 

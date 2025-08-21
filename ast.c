@@ -107,6 +107,9 @@ ASTNode* create_for_node(ASTNode *init, ASTNode *condition, ASTNode *increment, 
 
 ASTNode* create_compound_node(ASTNode *statements) {
     CompoundNode *node = malloc(sizeof(CompoundNode));
+    if (!node) {
+        return NULL;
+    }
     node->base.type = NODE_COMPOUND_STATEMENT;
     node->base.next = NULL;
     node->base.parent = NULL;
@@ -210,7 +213,9 @@ ASTNode* create_unary_op_node(Operator op, ASTNode *operand) {
 
 // Funções para manipular a AST
 void add_statement(ASTNode *program, ASTNode *statement) {
-    if (program->type != NODE_PROGRAM) return;
+    if (program->type != NODE_PROGRAM) {
+        return;
+    }
     
     ProgramNode *prog = (ProgramNode*)program;
     if (prog->statements == NULL) {
@@ -282,7 +287,9 @@ void free_ast(ASTNode *node) {
         }
         case NODE_COMPOUND_STATEMENT: {
             CompoundNode *comp = (CompoundNode*)node;
-            free_ast(comp->statements);
+            if (comp->statements) {
+                free_ast(comp->statements);
+            }
             break;
         }
         case NODE_RETURN: {
@@ -375,6 +382,13 @@ void print_ast(ASTNode *node, int depth) {
             }
             break;
         }
+        case NODE_CONDITION: {
+            ConditionNode *cond = (ConditionNode*)node;
+            printf("Condition\n");
+            print_ast(cond->left, depth + 1);
+            print_ast(cond->right, depth + 1);
+            break;
+        }
         case NODE_IF_STATEMENT: {
             IfNode *if_node = (IfNode*)node;
             printf("If Statement\n");
@@ -401,10 +415,14 @@ void print_ast(ASTNode *node, int depth) {
             print_ast(for_node->body, depth + 1);
             break;
         }
-        case NODE_COMPOUND_STATEMENT:
+        case NODE_COMPOUND_STATEMENT: {
+            CompoundNode *comp = (CompoundNode*)node;
             printf("Compound Statement\n");
-            print_ast(((CompoundNode*)node)->statements, depth + 1);
+            if (comp->statements) {
+                print_ast(comp->statements, depth + 1);
+            }
             break;
+        }
         case NODE_RETURN:
             printf("Return\n");
             print_ast(((ReturnNode*)node)->value, depth + 1);
@@ -427,8 +445,24 @@ void print_ast(ASTNode *node, int depth) {
         case NODE_STRING_LITERAL:
             printf("String: %s\n", ((StringLiteralNode*)node)->value);
             break;
+        case NODE_BINARY_OP: {
+            BinaryOpNode *bin = (BinaryOpNode*)node;
+            printf("Binary Op\n");
+            print_ast(bin->left, depth + 1);
+            print_ast(bin->right, depth + 1);
+            break;
+        }
+        case NODE_UNARY_OP: {
+            UnaryOpNode *unary = (UnaryOpNode*)node;
+            printf("Unary Op\n");
+            print_ast(unary->operand, depth + 1);
+            break;
+        }
         default:
             printf("Unknown Node Type\n");
             break;
     }
+    
+    // Processar próximo nó na lista
+    print_ast(node->next, depth);
 } 
