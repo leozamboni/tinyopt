@@ -25,6 +25,9 @@ void optimize_code(ASTNode *ast) {
     optimize_redundant_assignments(ast);
     optimize_empty_blocks(ast);
     
+    // Remover nós marcados como mortos
+    remove_dead_code(ast);
+    
     // Relatório de otimização
     print_optimization_report(ast);
     
@@ -39,6 +42,11 @@ void analyze_variable_usage(ASTNode *node, VariableTable *table) {
     if (node == NULL) return;
     
     switch (node->type) {
+        case NODE_PROGRAM: {
+            ProgramNode *prog = (ProgramNode*)node;
+            analyze_variable_usage(prog->statements, table);
+            break;
+        }
         case NODE_DECLARATION: {
             DeclarationNode *decl = (DeclarationNode*)node;
             if (decl->name) {
@@ -131,6 +139,11 @@ void mark_dead_code(ASTNode *node) {
     if (node == NULL) return;
     
     switch (node->type) {
+        case NODE_PROGRAM: {
+            ProgramNode *prog = (ProgramNode*)node;
+            mark_dead_code(prog->statements);
+            break;
+        }
         case NODE_IF_STATEMENT: {
             IfNode *if_node = (IfNode*)node;
             
@@ -221,6 +234,11 @@ void mark_unused_variables(ASTNode *node, VariableTable *table) {
     if (node == NULL) return;
     
     switch (node->type) {
+        case NODE_PROGRAM: {
+            ProgramNode *prog = (ProgramNode*)node;
+            mark_unused_variables(prog->statements, table);
+            break;
+        }
         case NODE_DECLARATION: {
             DeclarationNode *decl = (DeclarationNode*)node;
             if (decl->name) {
@@ -282,6 +300,11 @@ void optimize_empty_blocks(ASTNode *node) {
     if (node == NULL) return;
     
     switch (node->type) {
+        case NODE_PROGRAM: {
+            ProgramNode *prog = (ProgramNode*)node;
+            optimize_empty_blocks(prog->statements);
+            break;
+        }
         case NODE_COMPOUND_STATEMENT: {
             CompoundNode *comp = (CompoundNode*)node;
             if (comp->statements == NULL) {
@@ -404,3 +427,119 @@ void print_optimization_report(ASTNode *ast) {
     print_ast(ast, 0);
     printf("\n");
 } 
+
+// Remoção de nós marcados como código morto
+static void prune_list(ASTNode **head_ref);
+static void prune_children(ASTNode *node);
+
+void remove_dead_code(ASTNode *node) {
+    if (node == NULL) return;
+    switch (node->type) {
+        case NODE_PROGRAM: {
+            ProgramNode *prog = (ProgramNode*)node;
+            prune_list(&prog->statements);
+            break;
+        }
+        case NODE_COMPOUND_STATEMENT: {
+            CompoundNode *comp = (CompoundNode*)node;
+            prune_list(&comp->statements);
+            break;
+        }
+        case NODE_IF_STATEMENT: {
+            IfNode *ifn = (IfNode*)node;
+            prune_children(ifn->then_statement);
+            prune_children(ifn->else_statement);
+            if (ifn->condition) remove_dead_code(ifn->condition);
+            if (ifn->then_statement) remove_dead_code(ifn->then_statement);
+            if (ifn->else_statement) remove_dead_code(ifn->else_statement);
+            break;
+        }
+        case NODE_WHILE_STATEMENT: {
+            WhileNode *wn = (WhileNode*)node;
+            prune_children(wn->body);
+            if (wn->condition) remove_dead_code(wn->condition);
+            if (wn->body) remove_dead_code(wn->body);
+            break;
+        }
+        case NODE_FOR_STATEMENT: {
+            ForNode *fn = (ForNode*)node;
+            prune_children(fn->init);
+            prune_children(fn->increment);
+            prune_children(fn->body);
+            if (fn->condition) remove_dead_code(fn->condition);
+            if (fn->init) remove_dead_code(fn->init);
+            if (fn->increment) remove_dead_code(fn->increment);
+            if (fn->body) remove_dead_code(fn->body);
+            break;
+        }
+        default:
+            break;
+    }
+}
+
+static void prune_children(ASTNode *node) {
+    if (node == NULL) return;
+    if (node->type == NODE_COMPOUND_STATEMENT) {
+        CompoundNode *comp = (CompoundNode*)node;
+        prune_list(&comp->statements);
+    }
+}
+
+static void prune_list(ASTNode **head_ref) {
+    if (head_ref == NULL) return;
+    ASTNode *current = *head_ref;
+    ASTNode *previous = NULL;
+    while (current) {
+        if (current->is_dead_code) {
+            ASTNode *to_free = current;
+            current = current->next;
+            if (previous) {
+                previous->next = current;
+            } else {
+                *head_ref = current;
+            }
+            to_free->next = NULL;
+            free_ast(to_free);
+            continue;
+        }
+        // Recurse into nested structures
+        switch (current->type) {
+            case NODE_IF_STATEMENT: {
+                IfNode *ifn = (IfNode*)current;
+                prune_children(ifn->then_statement);
+                prune_children(ifn->else_statement);
+                if (ifn->then_statement) remove_dead_code(ifn->then_statement);
+                if (ifn->else_statement) remove_dead_code(ifn->else_statement);
+                if (ifn->condition) remove_dead_code(ifn->condition);
+                break;
+            }
+            case NODE_WHILE_STATEMENT: {
+                WhileNode *wn = (WhileNode*)current;
+                prune_children(wn->body);
+                if (wn->body) remove_dead_code(wn->body);
+                if (wn->condition) remove_dead_code(wn->condition);
+                break;
+            }
+            case NODE_FOR_STATEMENT: {
+                ForNode *fn = (ForNode*)current;
+                prune_children(fn->init);
+                prune_children(fn->increment);
+                prune_children(fn->body);
+                if (fn->init) remove_dead_code(fn->init);
+                if (fn->increment) remove_dead_code(fn->increment);
+                if (fn->body) remove_dead_code(fn->body);
+                if (fn->condition) remove_dead_code(fn->condition);
+                break;
+            }
+            case NODE_COMPOUND_STATEMENT: {
+                CompoundNode *comp = (CompoundNode*)current;
+                prune_list(&comp->statements);
+                break;
+            }
+            default:
+                break;
+        }
+        previous = current;
+        current = current->next;
+    }
+}
