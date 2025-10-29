@@ -106,18 +106,17 @@ static void emit_stmt(ASTNode *node) {
         }
         case NODE_IF_STATEMENT: {
             IfNode *i = (IfNode*)node;
-            printf("if (");
-            emit_expr(i->condition);
-            printf(") ");
+
             if (i->then_statement && i->then_statement->type == NODE_COMPOUND_STATEMENT) {
+                printf("if (");
+                emit_expr(i->condition);
+                printf(") ");
                 emit_block(((CompoundNode*)i->then_statement)->statements, 1);
-            } else {
-                printf("{\n  ");
-                emit_stmt(i->then_statement);
-                printf("}\n");
             }
             if (i->else_statement) {
-                printf("else ");
+                if (i->then_statement) {
+                    printf("else ");
+                }
                 if (i->else_statement->type == NODE_COMPOUND_STATEMENT) {
                     emit_block(((CompoundNode*)i->else_statement)->statements, 1);
                 } else {
@@ -205,7 +204,7 @@ static void emit_stmt(ASTNode *node) {
 }
 
 static void emit_expr(ASTNode *node) {
-    if (!node) { printf("0"); return; }
+    if (!node) { printf(""); return; }
     switch (node->type) {
         case NODE_NUMBER:
             printf("%s", ((NumberNode*)node)->value);

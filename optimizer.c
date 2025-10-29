@@ -30,7 +30,7 @@ void optimize_code(ASTNode *ast) {
     analyze_variable_usage(ast, var_table);
     
     // Marcar código morto
-    mark_dead_code(ast);
+    // mark_dead_code(ast);
     
     // Marcar variáveis não utilizadas
     mark_unused_variables(ast, var_table);
@@ -151,114 +151,6 @@ void analyze_variable_usage(ASTNode *node, VariableTable *table) {
     
     // Processar próximo nó na lista
     analyze_variable_usage(node->next, table);
-}
-
-// Marcar código morto
-void mark_dead_code(ASTNode *node) {
-    if (node == NULL) return;
-    
-    switch (node->type) {
-        case NODE_PROGRAM: {
-            ProgramNode *prog = (ProgramNode*)node;
-            mark_dead_code(prog->statements);
-            break;
-        }
-        case NODE_IF_STATEMENT: {
-            IfNode *if_node = (IfNode*)node;
-            
-            // Verificar se a condição é sempre verdadeira ou falsa
-            if (is_condition_always_true(if_node->condition)) {
-                // Marcar else como código morto
-                if (if_node->else_statement) {
-                    if_node->else_statement->is_dead_code = 1;
-                    mark_dead_code(if_node->else_statement);
-                }
-            } else if (is_condition_always_false(if_node->condition)) {
-                // Marcar then como código morto
-                if (if_node->then_statement) {
-                    if_node->then_statement->is_dead_code = 1;
-                    mark_dead_code(if_node->then_statement);
-                }
-                // Se não há else, marcar o if inteiro como morto
-                if (!if_node->else_statement) {
-                    node->is_dead_code = 1;
-                    printf("If statement com condição sempre falsa marcado como código morto\n");
-                }
-            }
-            
-            mark_dead_code(if_node->condition);
-            mark_dead_code(if_node->then_statement);
-            mark_dead_code(if_node->else_statement);
-            break;
-        }
-        case NODE_WHILE_STATEMENT: {
-            WhileNode *while_node = (WhileNode*)node;
-            
-            // Se a condição é sempre falsa, marcar o corpo como código morto
-            if (is_condition_always_false(while_node->condition)) {
-                if (while_node->body) {
-                    while_node->body->is_dead_code = 1;
-                    mark_dead_code(while_node->body);
-                }
-                // Marcar o while inteiro como morto
-                node->is_dead_code = 1;
-                printf("While statement com condição sempre falsa marcado como código morto\n");
-            }
-            
-            mark_dead_code(while_node->condition);
-            mark_dead_code(while_node->body);
-            break;
-        }
-        case NODE_FOR_STATEMENT: {
-            ForNode *for_node = (ForNode*)node;
-            
-            // Se a condição é sempre falsa, marcar o corpo como código morto
-            if (for_node->condition && is_condition_always_false(for_node->condition)) {
-                if (for_node->body) {
-                    for_node->body->is_dead_code = 1;
-                    mark_dead_code(for_node->body);
-                }
-                // Marcar o for inteiro como morto
-                node->is_dead_code = 1;
-                printf("For statement com condição sempre falsa marcado como código morto\n");
-            }
-            
-            mark_dead_code(for_node->init);
-            mark_dead_code(for_node->condition);
-            mark_dead_code(for_node->increment);
-            mark_dead_code(for_node->body);
-            break;
-        }
-        case NODE_COMPOUND_STATEMENT: {
-            CompoundNode *comp = (CompoundNode*)node;
-            if (comp->statements) {
-                mark_dead_code(comp->statements);
-            }
-            break;
-        }
-        case NODE_RETURN: {
-            // Código após return é inalcançável
-            if (node->next) {
-                node->next->is_dead_code = 1;
-                mark_dead_code(node->next);
-            }
-            break;
-        }
-        case NODE_BREAK:
-        case NODE_CONTINUE: {
-            // Código após break/continue é inalcançável
-            if (node->next) {
-                node->next->is_dead_code = 1;
-                mark_dead_code(node->next);
-            }
-            break;
-        }
-        default:
-            break;
-    }
-    
-    // Processar próximo nó na lista
-    mark_dead_code(node->next);
 }
 
 // Marcar variáveis não utilizadas
@@ -478,10 +370,148 @@ static void fold_in_tree(ASTNode *node) {
     fold_in_tree(node->next);
 }
 
+void mark_subtree_dead(ASTNode *node) {
+    if (node == NULL) return;
+
+    node->is_dead_code = 1;
+
+    switch (node->type) {
+        case NODE_IF_STATEMENT: {
+            IfNode *ifn = (IfNode*)node;
+            mark_subtree_dead(ifn->condition);
+            mark_subtree_dead(ifn->then_statement);
+            mark_subtree_dead(ifn->else_statement);
+            break;
+        }
+        case NODE_WHILE_STATEMENT: {
+            WhileNode *wn = (WhileNode*)node;
+            mark_subtree_dead(wn->condition);
+            mark_subtree_dead(wn->body);
+            break;
+        }
+        case NODE_FOR_STATEMENT: {
+            ForNode *fn = (ForNode*)node;
+            mark_subtree_dead(fn->init);
+            mark_subtree_dead(fn->condition);
+            mark_subtree_dead(fn->increment);
+            mark_subtree_dead(fn->body);
+            break;
+        }
+        case NODE_COMPOUND_STATEMENT: {
+            CompoundNode *comp = (CompoundNode*)node;
+            ASTNode *stmt = comp->statements;
+            while (stmt) {
+                mark_subtree_dead(stmt);
+                stmt = stmt->next;
+            }
+            break;
+        }
+        default:
+            break;
+    }
+
+    mark_subtree_dead(node->next);
+}
+
 void optimize_unreachable_code(ASTNode *node) {
     if (node == NULL) return;
     
-    // Código inalcançável já é marcado em mark_dead_code()
+    switch (node->type) {
+        case NODE_PROGRAM: {
+            ProgramNode *prog = (ProgramNode*)node;
+            optimize_unreachable_code(prog->statements);
+            break;
+        }
+        case NODE_IF_STATEMENT: {
+            IfNode *if_node = (IfNode*)node;
+            
+            if (is_condition_always_true(if_node->condition)) {
+                // Marcar else como código morto
+                if (if_node->else_statement) {
+                    mark_subtree_dead(if_node->else_statement);
+                    printf("Else statement marcado como código morto\n");
+                }
+            }
+            else if (is_condition_always_false(if_node->condition)) {
+                // Marcar then como código morto
+                if (if_node->then_statement) {
+                    mark_subtree_dead(if_node->then_statement);
+                    printf("Then statement marcado como código morto\n");
+                }
+                // Se não há else, marcar o if inteiro como morto
+                if (!if_node->else_statement) {
+                    node->is_dead_code = 1;
+                    printf("If statement com condição sempre falsa marcado como código morto\n");
+                }
+            }
+
+            optimize_unreachable_code(if_node->condition);
+            optimize_unreachable_code(if_node->then_statement);
+            optimize_unreachable_code(if_node->else_statement);
+            break;
+        }
+        case NODE_WHILE_STATEMENT: {
+            WhileNode *while_node = (WhileNode*)node;
+            
+            if (is_condition_always_false(while_node->condition)) {
+                // Corpo nunca executa
+                if (while_node->body) {
+                    mark_subtree_dead(while_node->body);
+                    printf("Corpo do while marcado como código morto\n");
+                }
+                node->is_dead_code = 1;
+                printf("While statement com condição sempre falsa marcado como código morto\n");
+            }
+            
+            optimize_unreachable_code(while_node->condition);
+            optimize_unreachable_code(while_node->body);
+            break;
+        }
+        case NODE_FOR_STATEMENT: {
+            ForNode *for_node = (ForNode*)node;
+
+            if (for_node->condition && is_condition_always_false(for_node->condition)) {
+                if (for_node->body) {
+                    mark_subtree_dead(for_node->body);
+                    printf("Corpo do for marcado como código morto\n");
+                }
+                node->is_dead_code = 1;
+                printf("For statement com condição sempre falsa marcado como código morto\n");
+            }
+            
+            optimize_unreachable_code(for_node->init);
+            optimize_unreachable_code(for_node->condition);
+            optimize_unreachable_code(for_node->increment);
+            optimize_unreachable_code(for_node->body);
+            break;
+        }
+        case NODE_COMPOUND_STATEMENT: {
+            CompoundNode *comp = (CompoundNode*)node;
+            if (comp->statements) {
+                optimize_unreachable_code(comp->statements);
+            }
+            break;
+        }
+        case NODE_RETURN: {
+            // Código após return é inalcançável
+            if (node->next) {
+                mark_subtree_dead(node->next);
+                printf("Código após return marcado como morto\n");
+            }
+            break;
+        }
+        case NODE_BREAK:
+        case NODE_CONTINUE: {
+            // Tudo após break/continue também é inalcançável
+            if (node->next) {
+                mark_subtree_dead(node->next);
+                printf("Código após break/continue marcado como morto\n");
+            }
+            break;
+        }
+        default:
+            break;
+    }
     
     optimize_unreachable_code(node->next);
 }
@@ -891,6 +921,18 @@ static void prune_list(ASTNode **head_ref) {
                 if (ifn->then_statement) remove_dead_code(ifn->then_statement);
                 if (ifn->else_statement) remove_dead_code(ifn->else_statement);
                 if (ifn->condition) remove_dead_code(ifn->condition);
+
+                if (ifn->then_statement && ifn->then_statement->is_dead_code) {
+                    free_ast(ifn->condition);
+                    free_ast(ifn->then_statement);
+                    ifn->then_statement = NULL;
+                    ifn->condition = NULL;
+                }
+                if (ifn->else_statement && ifn->else_statement->is_dead_code) {
+                    free_ast(ifn->else_statement);
+                    ifn->else_statement = NULL;
+                }
+        
                 break;
             }
             case NODE_WHILE_STATEMENT: {
