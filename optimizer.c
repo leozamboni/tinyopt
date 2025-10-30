@@ -2,9 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "codegen.h"
 
-// Helpers forward declarations
 static int is_number_node(ASTNode *n);
 static long parse_number_value(const char *s);
 static ASTNode* make_number(long value);
@@ -19,44 +17,25 @@ static void add_uses_from_expr(ASTNode *expr, char ***live_names, int *live_coun
 static int live_contains(char **live_names, int live_count, const char *name);
 static void live_add(char ***live_names, int *live_count, int *live_cap, const char *name);
 
-// Função principal de otimização
 void optimize_code(ASTNode *ast) {
-    printf("=== Iniciando Otimização de Código ===\n");
-    
-    // Criar tabela de variáveis
     VariableTable *var_table = create_variable_table();
     
-    // Análise de uso de variáveis
     analyze_variable_usage(ast, var_table);
     
-    // Marcar código morto
-    // mark_dead_code(ast);
-    
-    // Marcar variáveis não utilizadas
     mark_unused_variables(ast, var_table);
     
-    // Otimizações específicas
     optimize_constant_folding(ast);
     optimize_unreachable_code(ast);
     optimize_redundant_assignments(ast);
     optimize_empty_blocks(ast);
     
-    // Remover nós marcados como mortos
     remove_dead_code(ast);
-    
-    // Relatório de otimização
-    print_optimization_report(ast);
-    
-    // Código otimizado
-    print_optimized_code(ast);
-    
-    // Limpar tabela
+
+    //print_optimization_report(ast);
+
     free_variable_table(var_table);
-    
-    printf("=== Otimização Concluída ===\n");
 }
 
-// Análise de uso de variáveis
 void analyze_variable_usage(ASTNode *node, VariableTable *table) {
     if (node == NULL) return;
     
@@ -149,11 +128,9 @@ void analyze_variable_usage(ASTNode *node, VariableTable *table) {
             break;
     }
     
-    // Processar próximo nó na lista
     analyze_variable_usage(node->next, table);
 }
 
-// Marcar variáveis não utilizadas
 void mark_unused_variables(ASTNode *node, VariableTable *table) {
     if (node == NULL) return;
     
@@ -169,7 +146,7 @@ void mark_unused_variables(ASTNode *node, VariableTable *table) {
                 VariableInfo *var = find_variable(table, decl->name);
                 if (var && var->is_defined && !var->is_used) {
                     node->is_dead_code = 1;
-                    printf("Variável não utilizada marcada como código morto: %s\n", decl->name);
+                    // printf("Variável não utilizada marcada como código morto: %s\n", decl->name);
                 }
             }
             break;
@@ -180,7 +157,7 @@ void mark_unused_variables(ASTNode *node, VariableTable *table) {
                 VariableInfo *var = find_variable(table, assign->variable);
                 if (var && var->is_defined && !var->is_used) {
                     node->is_dead_code = 1;
-                    printf("Atribuição para variável não utilizada marcada como código morto: %s\n", assign->variable);
+                    // printf("Atribuição para variável não utilizada marcada como código morto: %s\n", assign->variable);
                 }
             }
             break;
@@ -189,11 +166,9 @@ void mark_unused_variables(ASTNode *node, VariableTable *table) {
             break;
     }
     
-    // Processar próximo nó na lista
     mark_unused_variables(node->next, table);
 }
 
-// Otimizações específicas
 void optimize_constant_folding(ASTNode *node) {
     if (node == NULL) return;
     fold_in_tree(node);
@@ -427,22 +402,19 @@ void optimize_unreachable_code(ASTNode *node) {
             IfNode *if_node = (IfNode*)node;
             
             if (is_condition_always_true(if_node->condition)) {
-                // Marcar else como código morto
                 if (if_node->else_statement) {
                     mark_subtree_dead(if_node->else_statement);
-                    printf("Else statement marcado como código morto\n");
+                    // printf("Else statement marcado como código morto\n");
                 }
             }
             else if (is_condition_always_false(if_node->condition)) {
-                // Marcar then como código morto
                 if (if_node->then_statement) {
                     mark_subtree_dead(if_node->then_statement);
-                    printf("Then statement marcado como código morto\n");
+                    // printf("Then statement marcado como código morto\n");
                 }
-                // Se não há else, marcar o if inteiro como morto
                 if (!if_node->else_statement) {
                     node->is_dead_code = 1;
-                    printf("If statement com condição sempre falsa marcado como código morto\n");
+                    // printf("If statement com condição sempre falsa marcado como código morto\n");
                 }
             }
 
@@ -455,13 +427,12 @@ void optimize_unreachable_code(ASTNode *node) {
             WhileNode *while_node = (WhileNode*)node;
             
             if (is_condition_always_false(while_node->condition)) {
-                // Corpo nunca executa
                 if (while_node->body) {
                     mark_subtree_dead(while_node->body);
-                    printf("Corpo do while marcado como código morto\n");
+                    // printf("Corpo do while marcado como código morto\n");
                 }
                 node->is_dead_code = 1;
-                printf("While statement com condição sempre falsa marcado como código morto\n");
+                // printf("While statement com condição sempre falsa marcado como código morto\n");
             }
             
             optimize_unreachable_code(while_node->condition);
@@ -474,10 +445,10 @@ void optimize_unreachable_code(ASTNode *node) {
             if (for_node->condition && is_condition_always_false(for_node->condition)) {
                 if (for_node->body) {
                     mark_subtree_dead(for_node->body);
-                    printf("Corpo do for marcado como código morto\n");
+                    // printf("Corpo do for marcado como código morto\n");
                 }
                 node->is_dead_code = 1;
-                printf("For statement com condição sempre falsa marcado como código morto\n");
+                // printf("For statement com condição sempre falsa marcado como código morto\n");
             }
             
             optimize_unreachable_code(for_node->init);
@@ -494,19 +465,17 @@ void optimize_unreachable_code(ASTNode *node) {
             break;
         }
         case NODE_RETURN: {
-            // Código após return é inalcançável
             if (node->next) {
                 mark_subtree_dead(node->next);
-                printf("Código após return marcado como morto\n");
+                // printf("Código após return marcado como morto\n");
             }
             break;
         }
         case NODE_BREAK:
         case NODE_CONTINUE: {
-            // Tudo após break/continue também é inalcançável
             if (node->next) {
                 mark_subtree_dead(node->next);
-                printf("Código após break/continue marcado como morto\n");
+                // printf("Código após break/continue marcado como morto\n");
             }
             break;
         }
@@ -520,7 +489,6 @@ void optimize_unreachable_code(ASTNode *node) {
 void optimize_redundant_assignments(ASTNode *node) {
     if (node == NULL) return;
     
-    // Dead store elimination via simple liveness in straight-line program lists
     switch (node->type) {
         case NODE_PROGRAM: {
             ProgramNode *p = (ProgramNode*)node;
@@ -605,14 +573,12 @@ static void add_uses_from_expr(ASTNode *expr, char ***live_names, int *live_coun
 
 static void dse_on_program(ProgramNode *p) {
     if (!p) return;
-    // Collect statements into array
     int cap = 32, count = 0;
     ASTNode **arr = malloc(sizeof(ASTNode*) * cap);
     for (ASTNode *cur = p->statements; cur; cur = cur->next) {
         if (count >= cap) { cap *= 2; arr = realloc(arr, sizeof(ASTNode*) * cap); }
         arr[count++] = cur;
     }
-    // Liveness set as vector of names
     int live_cap = 32, live_count = 0;
     char **live = malloc(sizeof(char*) * live_cap);
     for (int i = count - 1; i >= 0; i--) {
@@ -620,21 +586,18 @@ static void dse_on_program(ProgramNode *p) {
         switch (stmt->type) {
             case NODE_ASSIGNMENT: {
                 AssignmentNode *as = (AssignmentNode*)stmt;
-                // Uses from RHS and potentially LHS for compound ops
                 if (as->op == OP_ADD_ASSIGN || as->op == OP_SUB_ASSIGN ||
                     as->op == OP_MUL_ASSIGN || as->op == OP_DIV_ASSIGN ||
                     as->op == OP_MOD_ASSIGN || as->op == OP_INC || as->op == OP_DEC) {
                     live_add(&live, &live_count, &live_cap, as->variable);
                 }
                 add_uses_from_expr(as->value, &live, &live_count, &live_cap);
-                // Dead store if LHS not live-out and RHS is pure
                 if (!live_contains(live, live_count, as->variable)) {
                     if (is_pure_expression(as->value)) {
                         stmt->is_dead_code = 1;
                         break;
                     }
                 }
-                // Define makes it live for previous statements
                 live_add(&live, &live_count, &live_cap, as->variable);
                 break;
             }
@@ -652,7 +615,6 @@ static void dse_on_program(ProgramNode *p) {
             case NODE_RETURN: {
                 ReturnNode *r = (ReturnNode*)stmt;
                 add_uses_from_expr(r->value, &live, &live_count, &live_cap);
-                // After return, clear live set (linear model)
                 for (int k = 0; k < live_count; k++) { free(live[k]); }
                 live_count = 0;
                 break;
@@ -694,7 +656,7 @@ void optimize_empty_blocks(ASTNode *node) {
             CompoundNode *comp = (CompoundNode*)node;
             if (comp->statements == NULL) {
                 node->is_dead_code = 1;
-                printf("Bloco vazio marcado como código morto\n");
+                // printf("Bloco vazio marcado como código morto\n");
             }
             break;
         }
@@ -705,7 +667,6 @@ void optimize_empty_blocks(ASTNode *node) {
     optimize_empty_blocks(node->next);
 }
 
-// Análise de fluxo de controle
 int is_condition_always_true(ASTNode *condition) {
     if (condition == NULL) return 0;
     
@@ -782,7 +743,6 @@ int has_break_continue(ASTNode *node) {
     return has_break_continue(node->next);
 }
 
-// Funções auxiliares
 VariableTable* create_variable_table() {
     VariableTable *table = malloc(sizeof(VariableTable));
     if (!table) {
@@ -839,7 +799,6 @@ void print_optimization_report(ASTNode *ast) {
     printf("\n");
 } 
 
-// Remoção de nós marcados como código morto
 static void prune_list(ASTNode **head_ref);
 static void prune_children(ASTNode *node);
 
@@ -913,7 +872,6 @@ static void prune_list(ASTNode **head_ref) {
             free_ast(to_free);
             continue;
         }
-        // Recurse into nested structures
         switch (current->type) {
             case NODE_IF_STATEMENT: {
                 IfNode *ifn = (IfNode*)current;
@@ -966,5 +924,3 @@ static void prune_list(ASTNode **head_ref) {
         current = current->next;
     }
 }
-
-// code generation moved to codegen.c

@@ -11,7 +11,6 @@ static void emit_indent(int n);
 static void emit_block(ASTNode *node, int indent);
 
 void print_optimized_code(ASTNode *ast) {
-    printf("\n=== Código Otimizado (C-like) ===\n");
     if (!ast) { printf("\n"); return; }
     if (ast->type == NODE_PROGRAM) {
         ProgramNode *p = (ProgramNode*)ast;
@@ -19,7 +18,6 @@ void print_optimized_code(ASTNode *ast) {
     } else {
         emit_stmt(ast);
     }
-    printf("\n");
 }
 
 static void emit_stmt_list(ASTNode *node) {
@@ -59,6 +57,7 @@ static const char* relop_to_str(Operator op) {
         case OP_LE: return "<=";
         case OP_GT: return ">";
         case OP_GE: return ">=";
+        case OP_OR: return "||";
         default: return "?";
     }
 }
@@ -106,6 +105,23 @@ static void emit_stmt(ASTNode *node) {
         }
         case NODE_IF_STATEMENT: {
             IfNode *i = (IfNode*)node;
+
+            if (!i->condition && i->then_statement && !i->else_statement) {
+                if (i->then_statement->type == NODE_COMPOUND_STATEMENT) {
+                    emit_stmt_list(((CompoundNode*)i->then_statement)->statements);
+                } else {
+                    emit_stmt(i->then_statement);
+                }
+                break;
+            }
+            if (!i->condition && !i->then_statement && i->else_statement) {
+                if (i->else_statement->type == NODE_COMPOUND_STATEMENT) {
+                    emit_stmt_list(((CompoundNode*)i->else_statement)->statements);
+                } else {
+                    emit_stmt(i->else_statement);
+                }
+                break;
+            }
 
             if (i->then_statement && i->then_statement->type == NODE_COMPOUND_STATEMENT) {
                 printf("if (");

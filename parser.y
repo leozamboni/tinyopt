@@ -62,7 +62,6 @@ program:
     program statement { 
         if ($2) {
             add_statement(global_ast, $2);
-            printf("Instrução adicionada à AST\n");
         }
     }
     | /* vazio */
@@ -77,63 +76,51 @@ statement:
     | compound_statement      { $$ = $1; }
     | RETURN expression ';'   { 
         $$ = create_return_node($2);
-        printf("return expression\n");
     }
     | BREAK ';'               { 
         $$ = create_control_node(1);
-        printf("break\n");
     }
     | CONTINUE ';'            { 
         $$ = create_control_node(0);
-        printf("continue\n");
     }
     ;
 
 declaration:
       INT ID         { 
         $$ = create_declaration_node(TYPE_INT, $2, NULL, 0);
-        printf("declaração: int %s\n", $2); 
         free($2); 
     }
     | FLOAT ID       { 
         $$ = create_declaration_node(TYPE_FLOAT, $2, NULL, 0);
-        printf("declaração: float %s\n", $2); 
         free($2); 
     }
     | CHAR ID        { 
         $$ = create_declaration_node(TYPE_CHAR, $2, NULL, 0);
-        printf("declaração: char %s\n", $2); 
         free($2); 
     }
     | VOID ID        { 
         $$ = create_declaration_node(TYPE_VOID, $2, NULL, 0);
-        printf("declaração: void %s\n", $2); 
         free($2); 
     }
     | INT ID '=' expression { 
         $$ = create_declaration_node(TYPE_INT, $2, $4, 0);
-        printf("declaração: int %s = expression\n", $2); 
         free($2); 
     }
     | FLOAT ID '=' expression { 
         $$ = create_declaration_node(TYPE_FLOAT, $2, $4, 0);
-        printf("declaração: float %s = expression\n", $2); 
         free($2); 
     }
     | CHAR ID '=' expression { 
         $$ = create_declaration_node(TYPE_CHAR, $2, $4, 0);
-        printf("declaração: char %s = expression\n", $2); 
         free($2); 
     }
     | INT ID '[' NUMBER ']'   { 
         $$ = create_declaration_node(TYPE_ARRAY, $2, NULL, atoi($4));
-        printf("declaração: int %s[%s]\n", $2, $4); 
         free($2); 
         free($4); 
     }
     | FLOAT ID '[' NUMBER ']' { 
         $$ = create_declaration_node(TYPE_ARRAY, $2, NULL, atoi($4));
-        printf("declaração: float %s[%s]\n", $2, $4); 
         free($2); 
         free($4); 
     }
@@ -142,52 +129,42 @@ declaration:
 assignment:
     ID '=' expression { 
         $$ = create_assignment_node($1, OP_ASSIGN, $3);
-        printf("atribuição: %s = expression\n", $1); 
         free($1); 
     }
     | ID ADD_ASSIGN expression { 
         $$ = create_assignment_node($1, OP_ADD_ASSIGN, $3);
-        printf("atribuição: %s += expression\n", $1); 
         free($1); 
     }
     | ID SUB_ASSIGN expression { 
         $$ = create_assignment_node($1, OP_SUB_ASSIGN, $3);
-        printf("atribuição: %s -= expression\n", $1); 
         free($1); 
     }
     | ID MUL_ASSIGN expression { 
         $$ = create_assignment_node($1, OP_MUL_ASSIGN, $3);
-        printf("atribuição: %s *= expression\n", $1); 
         free($1); 
     }
     | ID DIV_ASSIGN expression { 
         $$ = create_assignment_node($1, OP_DIV_ASSIGN, $3);
-        printf("atribuição: %s /= expression\n", $1); 
         free($1); 
     }
     | ID MOD_ASSIGN expression { 
         $$ = create_assignment_node($1, OP_MOD_ASSIGN, $3);
-        printf("atribuição: %s %%= expression\n", $1); 
         free($1); 
     }
     | ID INC { 
         $$ = create_assignment_node($1, OP_INC, NULL);
-        printf("incremento: %s++\n", $1); 
         free($1); 
     }
     | ID DEC { 
         $$ = create_assignment_node($1, OP_DEC, NULL);
-        printf("decremento: %s--\n", $1); 
         free($1); 
     }
     | INC ID { 
         $$ = create_assignment_node($2, OP_INC, NULL);
-        printf("incremento: ++%s\n", $2); 
         free($2); 
     }
     | DEC ID { 
         $$ = create_assignment_node($2, OP_DEC, NULL);
-        printf("decremento: --%s\n", $2); 
         free($2); 
     }
     ;
@@ -195,61 +172,48 @@ assignment:
 if_statement:
     IF '(' condition ')' statement { 
         $$ = create_if_node($3, $5, NULL);
-        printf("if (condition) then\n");
     }
     | IF '(' condition ')' statement ELSE statement { 
         $$ = create_if_node($3, $5, $7);
-        printf("if (condition) then else\n");
     }
     ;
 
 while_statement:
     WHILE '(' condition ')' statement { 
         $$ = create_while_node($3, $5);
-        printf("while (condition) do\n");
     }
     ;
 
 for_statement:
     FOR '(' declaration ';' condition ';' assignment ')' statement { 
         $$ = create_for_node($3, $5, $7, $9);
-        printf("for (declaração; condition; atribuição) do\n");
     }
     | FOR '(' assignment ';' condition ';' assignment ')' statement { 
         $$ = create_for_node($3, $5, $7, $9);
-        printf("for (atribuição; condition; atribuição) do\n");
     }
     | FOR '(' ';' condition ';' assignment ')' statement { 
         $$ = create_for_node(NULL, $4, $6, $8);
-        printf("for (; condition; atribuição) do\n");
     }
     | FOR '(' declaration ';' ';' assignment ')' statement { 
         $$ = create_for_node($3, NULL, $6, $8);
-        printf("for (declaração; ; atribuição) do\n");
     }
     | FOR '(' assignment ';' ';' assignment ')' statement { 
         $$ = create_for_node($3, NULL, $6, $8);
-        printf("for (atribuição; ; atribuição) do\n");
     }
     | FOR '(' ';' ';' assignment ')' statement { 
         $$ = create_for_node(NULL, NULL, $5, $7);
-        printf("for (; ; atribuição) do\n");
     }
     | FOR '(' declaration ';' condition ';' ')' statement { 
         $$ = create_for_node($3, $5, NULL, $8);
-        printf("for (declaração; condition; ) do\n");
     }
     | FOR '(' assignment ';' condition ';' ')' statement { 
         $$ = create_for_node($3, $5, NULL, $8);
-        printf("for (atribuição; condition; ) do\n");
     }
     | FOR '(' ';' condition ';' ')' statement { 
         $$ = create_for_node(NULL, $4, NULL, $7);
-        printf("for (; condition; ) do\n");
     }
     | FOR '(' ';' ';' ')' statement { 
         $$ = create_for_node(NULL, NULL, NULL, $6);
-        printf("for (; ; ) do\n");
     }
     ;
 
@@ -257,7 +221,6 @@ compound_statement:
     '{' compound_program '}' { 
         ProgramNode *prog = (ProgramNode*)$2;
         $$ = create_compound_node(prog->statements);
-        printf("bloco de código\n");
         // Set statements to NULL to avoid double-freeing
         prog->statements = NULL;
     }
@@ -278,27 +241,21 @@ compound_program:
 
 condition:
       expression EQ expression { 
-        printf("Criando condição EQ\n");
         $$ = create_condition_node(OP_EQ, $1, $3);
     }
     | expression NE expression { 
-        printf("Criando condição NE\n");
         $$ = create_condition_node(OP_NE, $1, $3);
     }
     | expression '<' expression { 
-        printf("Criando condição LT\n");
         $$ = create_condition_node(OP_LT, $1, $3);
     }
     | expression LE expression { 
-        printf("Criando condição LE\n");
         $$ = create_condition_node(OP_LE, $1, $3);
     }
     | expression '>' expression { 
-        printf("Criando condição GT\n");
         $$ = create_condition_node(OP_GT, $1, $3);
     }
     | expression GE expression { 
-        printf("Criando condição GE\n");
         $$ = create_condition_node(OP_GE, $1, $3);
     }
     | condition AND condition { 
