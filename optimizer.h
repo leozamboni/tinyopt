@@ -22,6 +22,7 @@ typedef struct {
     int is_used;
     int is_defined;
     int is_dead;
+    ASTNode *node;
     VariableValue *value;
 } VariableInfo;
 
@@ -40,7 +41,7 @@ void analyze_variable_usage(ASTNode *node, VariableTable *table, char *current_s
 void optimize_unused_variables(ASTNode *node, VariableTable *table, char *current_scope);
 void optimize_constant_folding(ASTNode *node);
 void optimize_unreachable_code(ASTNode *node, VariableTable *table, char *current_scope);
-void optimize_redundant_assignments(ASTNode *node);
+void optimize_redundant_assignments(ASTNode *node, VariableTable *table, char *current_scope);
 void optimize_empty_blocks(ASTNode *node);
 
 int is_condition_always_true(ASTNode *condition, VariableTable *table, char *current_scope);
@@ -49,7 +50,7 @@ int has_return_statement(ASTNode *node);
 int has_break_continue(ASTNode *node);
 
 VariableTable* create_variable_table();
-void add_variable(VariableTable *table, char *scope, char *name);
+void add_variable(VariableTable *table, char *scope, char *name, ASTNode *node);
 VariableInfo *find_variable(VariableTable *table, char *scope, char *name);
 VariableInfo* set_variable_value(VariableTable *table, char *scope, char *name, VariableValue *value);
 VariableValue *create_variable_value_from_node(ASTNode *node, VariableTable *table, char *current_scope);

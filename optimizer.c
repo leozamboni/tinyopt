@@ -12,10 +12,6 @@ static void fold_in_tree(ASTNode *node);
 static int is_pure_expression(ASTNode *expr);
 static long eval_relational(Operator op, long a, long b);
 static long eval_binary(Operator op, long a, long b);
-static void dse_on_program(ProgramNode *p);
-static void add_uses_from_expr(ASTNode *expr, char ***live_names, int *live_count, int *live_cap);
-static int live_contains(char **live_names, int live_count, const char *name);
-static void live_add(char ***live_names, int *live_count, int *live_cap, const char *name);
 
 void optimize_code(ASTNode *ast)
 {
@@ -26,8 +22,14 @@ void optimize_code(ASTNode *ast)
     optimize_unused_variables(ast, var_table, "global");
     optimize_constant_folding(ast);
     optimize_unreachable_code(ast, var_table, "global");
-    optimize_redundant_assignments(ast);
     optimize_empty_blocks(ast);
+
+    free_variable_table(var_table);
+
+    remove_dead_code(ast);
+
+    var_table = create_variable_table();
+    optimize_redundant_assignments(ast, var_table, "global");
 
     remove_dead_code(ast);
 
@@ -54,7 +56,7 @@ void analyze_variable_usage(ASTNode *node, VariableTable *table, char *current_s
         DeclarationNode *decl = (DeclarationNode *)node;
         if (decl->name)
         {
-            add_variable(table, current_scope, decl->name);
+            add_variable(table, current_scope, decl->name, NULL);
             VariableInfo *var = find_variable(table, current_scope, decl->name);
             if (var)
             {
@@ -62,7 +64,8 @@ void analyze_variable_usage(ASTNode *node, VariableTable *table, char *current_s
             }
         }
 
-        if (decl->initial_value) {
+        if (decl->initial_value)
+        {
             VariableValue *value = create_variable_value_from_node(decl->initial_value, table, current_scope);
             set_variable_value(table, current_scope, decl->name, value);
         }
@@ -75,7 +78,7 @@ void analyze_variable_usage(ASTNode *node, VariableTable *table, char *current_s
         AssignmentNode *assign = (AssignmentNode *)node;
         if (assign->variable)
         {
-            add_variable(table, current_scope, assign->variable);
+            add_variable(table, current_scope, assign->variable, NULL);
 
             VariableValue *value = create_variable_value_from_node(assign->value, table, current_scope);
             set_variable_value(table, current_scope, assign->variable, value);
@@ -787,7 +790,7 @@ void optimize_unreachable_code(ASTNode *node, VariableTable *table, char *curren
     optimize_unreachable_code(node->next, table, current_scope);
 }
 
-void optimize_redundant_assignments(ASTNode *node)
+void optimize_redundant_assignments(ASTNode *node, VariableTable *table, char *current_scope)
 {
     if (node == NULL)
         return;
@@ -796,235 +799,149 @@ void optimize_redundant_assignments(ASTNode *node)
     {
     case NODE_PROGRAM:
     {
-        ProgramNode *p = (ProgramNode *)node;
-        dse_on_program(p);
+        ProgramNode *prog = (ProgramNode *)node;
+        optimize_redundant_assignments(prog->statements, table, current_scope);
         break;
     }
-    case NODE_COMPOUND_STATEMENT:
+    case NODE_DECLARATION:
     {
-        CompoundNode *c = (CompoundNode *)node;
-        if (c->statements)
+        DeclarationNode *decl = (DeclarationNode *)node;
+        if (decl->name)
         {
-            // Criar um ProgramNode temporário para usar dse_on_program
-            ProgramNode temp_prog;
-            temp_prog.base.type = NODE_PROGRAM;
-            temp_prog.statements = c->statements;
-            dse_on_program(&temp_prog);
-            optimize_redundant_assignments(c->statements);
+            add_variable(table, current_scope, decl->name, node);
+            VariableInfo *var = find_variable(table, current_scope, decl->name);
+            if (var)
+            {
+                var->is_defined = 1;
+            }
         }
+
+        if (decl->initial_value)
+        {
+            VariableValue *value = create_variable_value_from_node(decl->initial_value, table, current_scope);
+            set_variable_value(table, current_scope, decl->name, value);
+        }
+
+        optimize_redundant_assignments(decl->initial_value, table, current_scope);
+        break;
+    }
+    case NODE_ASSIGNMENT:
+    {
+        AssignmentNode *assign = (AssignmentNode *)node;
+        if (assign->variable)
+        {
+            if (assign->op == OP_ASSIGN)
+            {
+                add_variable(table, current_scope, assign->variable, node);
+                VariableInfo *var = find_variable(table, current_scope, assign->variable);
+                var->node = node;
+                if (!var->is_used)
+                {
+                    node->is_dead_code = 1;
+                }
+            }
+        }
+        optimize_redundant_assignments(assign->value, table, current_scope);
+        break;
+    }
+    case NODE_IDENTIFIER:
+    {
+        IdentifierNode *id = (IdentifierNode *)node;
+        if (id->name)
+        {
+            VariableInfo *var = find_variable(table, current_scope, id->name);
+            if (var)
+            {
+                var->node->is_dead_code = 0;
+                var->is_used = 1;
+            }
+        }
+        break;
+    }
+    case NODE_EXPRESSION:
+    {
+        ExpressionNode *expr = (ExpressionNode *)node;
+        optimize_redundant_assignments(expr->left, table, current_scope);
+        optimize_redundant_assignments(expr->right, table, current_scope);
+        break;
+    }
+    case NODE_CONDITION:
+    {
+        ConditionNode *cond = (ConditionNode *)node;
+        optimize_redundant_assignments(cond->left, table, current_scope);
+        optimize_redundant_assignments(cond->right, table, current_scope);
         break;
     }
     case NODE_IF_STATEMENT:
     {
-        IfNode *i = (IfNode *)node;
-        if (i->then_statement)
-            optimize_redundant_assignments(i->then_statement);
-        if (i->else_statement)
-            optimize_redundant_assignments(i->else_statement);
+        IfNode *if_node = (IfNode *)node;
+        optimize_redundant_assignments(if_node->condition, table, current_scope);
+        optimize_redundant_assignments(if_node->then_statement, table, current_scope);
+        optimize_redundant_assignments(if_node->else_statement, table, current_scope);
         break;
     }
     case NODE_WHILE_STATEMENT:
     {
-        WhileNode *w = (WhileNode *)node;
-        if (w->body)
-            optimize_redundant_assignments(w->body);
+        WhileNode *while_node = (WhileNode *)node;
+        optimize_redundant_assignments(while_node->condition, table, current_scope);
+        optimize_redundant_assignments(while_node->body, table, current_scope);
         break;
     }
     case NODE_FOR_STATEMENT:
     {
-        ForNode *f = (ForNode *)node;
-        if (f->init)
-            optimize_redundant_assignments(f->init);
-        if (f->increment)
-            optimize_redundant_assignments(f->increment);
-        if (f->body)
-            optimize_redundant_assignments(f->body);
+        ForNode *for_node = (ForNode *)node;
+        optimize_redundant_assignments(for_node->init, table, current_scope);
+        optimize_redundant_assignments(for_node->condition, table, current_scope);
+        optimize_redundant_assignments(for_node->increment, table, current_scope);
+        optimize_redundant_assignments(for_node->body, table, current_scope);
+        break;
+    }
+    case NODE_COMPOUND_STATEMENT:
+    {
+        CompoundNode *comp = (CompoundNode *)node;
+        if (comp->statements)
+        {
+            optimize_redundant_assignments(comp->statements, table, current_scope);
+        }
+        break;
+    }
+    case NODE_RETURN:
+    {
+        ReturnNode *ret = (ReturnNode *)node;
+        optimize_redundant_assignments(ret->value, table, current_scope);
         break;
     }
     case NODE_FUNCTION_DEF:
     {
         FunctionDefNode *func = (FunctionDefNode *)node;
-        if (func->body)
-            optimize_redundant_assignments(func->body);
-        break;
-    }
-    default:
-        break;
-    }
-
-    optimize_redundant_assignments(node->next);
-}
-
-static int live_contains(char **live_names, int live_count, const char *name)
-{
-    if (name == NULL)
-        return 0;
-    for (int i = 0; i < live_count; i++)
-    {
-        if (live_names[i] && strcmp(live_names[i], name) == 0)
-            return 1;
-    }
-    return 0;
-}
-
-static void live_add(char ***live_names, int *live_count, int *live_cap, const char *name)
-{
-    if (name == NULL)
-        return;
-    if (live_contains(*live_names, *live_count, name))
-        return;
-    if (*live_count >= *live_cap)
-    {
-        *live_cap *= 2;
-        *live_names = realloc(*live_names, sizeof(char *) * (*live_cap));
-    }
-    (*live_names)[(*live_count)++] = strdup(name);
-}
-
-static void add_uses_from_expr(ASTNode *expr, char ***live_names, int *live_count, int *live_cap)
-{
-    if (!expr)
-        return;
-    switch (expr->type)
-    {
-    case NODE_IDENTIFIER:
-        live_add(live_names, live_count, live_cap, ((IdentifierNode *)expr)->name);
-        break;
-    case NODE_BINARY_OP:
-    {
-        BinaryOpNode *b = (BinaryOpNode *)expr;
-        add_uses_from_expr(b->left, live_names, live_count, live_cap);
-        add_uses_from_expr(b->right, live_names, live_count, live_cap);
-        break;
-    }
-    case NODE_UNARY_OP:
-    {
-        UnaryOpNode *u = (UnaryOpNode *)expr;
-        add_uses_from_expr(u->operand, live_names, live_count, live_cap);
+        optimize_redundant_assignments(func->parameters, table, func->name);
+        optimize_redundant_assignments(func->body, table, func->name);
         break;
     }
     case NODE_FUNCTION_CALL:
     {
-        FunctionCallNode *call = (FunctionCallNode *)expr;
-        // Adicionar usos dos argumentos
-        if (call->arguments && call->arguments->type == NODE_PROGRAM)
-        {
-            ProgramNode *prog = (ProgramNode *)call->arguments;
-            ASTNode *cur = prog->statements;
-            while (cur)
-            {
-                add_uses_from_expr(cur, live_names, live_count, live_cap);
-                cur = cur->next;
-            }
-        }
+        FunctionCallNode *call = (FunctionCallNode *)node;
+        optimize_redundant_assignments(call->arguments, table, current_scope);
         break;
     }
-    case NODE_CONDITION:
+    case NODE_BINARY_OP:
     {
-        ConditionNode *c = (ConditionNode *)expr;
-        add_uses_from_expr(c->left, live_names, live_count, live_cap);
-        add_uses_from_expr(c->right, live_names, live_count, live_cap);
+        BinaryOpNode *bin = (BinaryOpNode *)node;
+        optimize_redundant_assignments(bin->left, table, current_scope);
+        optimize_redundant_assignments(bin->right, table, current_scope);
+        break;
+    }
+    case NODE_UNARY_OP:
+    {
+        UnaryOpNode *unary = (UnaryOpNode *)node;
+        optimize_redundant_assignments(unary->operand, table, current_scope);
         break;
     }
     default:
         break;
     }
-}
 
-static void dse_on_program(ProgramNode *p)
-{
-    if (!p)
-        return;
-    int cap = 32, count = 0;
-    ASTNode **arr = malloc(sizeof(ASTNode *) * cap);
-    for (ASTNode *cur = p->statements; cur; cur = cur->next)
-    {
-        if (count >= cap)
-        {
-            cap *= 2;
-            arr = realloc(arr, sizeof(ASTNode *) * cap);
-        }
-        arr[count++] = cur;
-    }
-    int live_cap = 32, live_count = 0;
-    char **live = malloc(sizeof(char *) * live_cap);
-    for (int i = count - 1; i >= 0; i--)
-    {
-        ASTNode *stmt = arr[i];
-        switch (stmt->type)
-        {
-        case NODE_ASSIGNMENT:
-        {
-            AssignmentNode *as = (AssignmentNode *)stmt;
-            if (as->op == OP_ADD_ASSIGN || as->op == OP_SUB_ASSIGN ||
-                as->op == OP_MUL_ASSIGN || as->op == OP_DIV_ASSIGN ||
-                as->op == OP_MOD_ASSIGN || as->op == OP_INC || as->op == OP_DEC)
-            {
-                live_add(&live, &live_count, &live_cap, as->variable);
-            }
-            add_uses_from_expr(as->value, &live, &live_count, &live_cap);
-            if (!live_contains(live, live_count, as->variable))
-            {
-                if (is_pure_expression(as->value))
-                {
-                    stmt->is_dead_code = 1;
-                    break;
-                }
-            }
-            live_add(&live, &live_count, &live_cap, as->variable);
-            break;
-        }
-        case NODE_DECLARATION:
-        {
-            DeclarationNode *d = (DeclarationNode *)stmt;
-            if (d->initial_value)
-            {
-                add_uses_from_expr(d->initial_value, &live, &live_count, &live_cap);
-                if (!live_contains(live, live_count, d->name) && is_pure_expression(d->initial_value))
-                {
-                    stmt->is_dead_code = 1;
-                    break;
-                }
-            }
-            break;
-        }
-        case NODE_RETURN:
-        {
-            ReturnNode *r = (ReturnNode *)stmt;
-            add_uses_from_expr(r->value, &live, &live_count, &live_cap);
-            for (int k = 0; k < live_count; k++)
-            {
-                free(live[k]);
-            }
-            live_count = 0;
-            break;
-        }
-        case NODE_IF_STATEMENT:
-        {
-            IfNode *in = (IfNode *)stmt;
-            add_uses_from_expr(in->condition, &live, &live_count, &live_cap);
-            break;
-        }
-        case NODE_WHILE_STATEMENT:
-        {
-            WhileNode *wn = (WhileNode *)stmt;
-            add_uses_from_expr(wn->condition, &live, &live_count, &live_cap);
-            break;
-        }
-        case NODE_FOR_STATEMENT:
-        {
-            ForNode *fn = (ForNode *)stmt;
-            add_uses_from_expr(fn->condition, &live, &live_count, &live_cap);
-            break;
-        }
-        default:
-            break;
-        }
-    }
-    for (int i = 0; i < live_count; i++)
-        free(live[i]);
-    free(live);
-    free(arr);
+    optimize_redundant_assignments(node->next, table, current_scope);
 }
 
 void optimize_empty_blocks(ASTNode *node)
@@ -1263,7 +1180,7 @@ VariableTable *create_variable_table()
     return table;
 }
 
-void add_variable(VariableTable *table, char *scope, char *name)
+void add_variable(VariableTable *table, char *scope, char *name, ASTNode *node)
 {
     if (name == NULL || find_variable(table, scope, name) != NULL)
         return;
@@ -1279,6 +1196,7 @@ void add_variable(VariableTable *table, char *scope, char *name)
     table->variables[table->count].is_used = 0;
     table->variables[table->count].is_defined = 0;
     table->variables[table->count].is_dead = 0;
+    table->variables[table->count].node = node;
     table->variables[table->count].value = NULL;
     table->count++;
 }
