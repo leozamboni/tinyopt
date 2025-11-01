@@ -67,7 +67,8 @@ typedef struct ASTNode {
     struct ASTNode *next;  
     struct ASTNode *parent;
     int line;              
-    int is_dead_code;      
+    int is_dead_code;
+    int id;      
 } ASTNode;
 
 typedef struct {

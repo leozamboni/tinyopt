@@ -3,6 +3,8 @@
 #include "ast.h"
 #include <string.h>
 #include <stdlib.h>
+
+int assig_id = 0;
 %}
 
 digit       [0-9]
@@ -51,7 +53,7 @@ string_literal \"[^\"]*\"
 "*"             { return '*'; }
 "/"             { return '/'; }
 "%"             { return '%'; }
-"="             { return '='; }
+"="             { assig_id++; return '='; }
 "=="            { return EQ; }
 "!="            { return NE; }
 "<"             { return '<'; }

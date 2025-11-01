@@ -7,6 +7,7 @@
 
 int yylex(void);
 void yyerror(const char *s);
+extern int assig_id;
 
 // Variável global para a AST
 extern ASTNode *global_ast;
@@ -133,42 +134,52 @@ declaration:
 assignment:
     ID '=' expression { 
         $$ = create_assignment_node($1, OP_ASSIGN, $3);
+        ((ASTNode*)$$)->id = assig_id;
         free($1); 
     }
     | ID ADD_ASSIGN expression { 
         $$ = create_assignment_node($1, OP_ADD_ASSIGN, $3);
+        ((ASTNode*)$$)->id = assig_id;
         free($1); 
     }
     | ID SUB_ASSIGN expression { 
         $$ = create_assignment_node($1, OP_SUB_ASSIGN, $3);
+        ((ASTNode*)$$)->id = assig_id;
         free($1); 
     }
     | ID MUL_ASSIGN expression { 
         $$ = create_assignment_node($1, OP_MUL_ASSIGN, $3);
+        ((ASTNode*)$$)->id = assig_id;
         free($1); 
     }
     | ID DIV_ASSIGN expression { 
         $$ = create_assignment_node($1, OP_DIV_ASSIGN, $3);
+        ((ASTNode*)$$)->id = assig_id;
         free($1); 
     }
     | ID MOD_ASSIGN expression { 
         $$ = create_assignment_node($1, OP_MOD_ASSIGN, $3);
+        ((ASTNode*)$$)->id = assig_id;
         free($1); 
     }
     | ID INC { 
         $$ = create_assignment_node($1, OP_INC, NULL);
+        ((ASTNode*)$$)->id = assig_id;
         free($1); 
     }
     | ID DEC { 
         $$ = create_assignment_node($1, OP_DEC, NULL);
+        ((ASTNode*)$$)->id = assig_id;
         free($1); 
     }
     | INC ID { 
         $$ = create_assignment_node($2, OP_INC, NULL);
+        ((ASTNode*)$$)->id = assig_id;
         free($2); 
     }
     | DEC ID { 
         $$ = create_assignment_node($2, OP_DEC, NULL);
+        ((ASTNode*)$$)->id = assig_id;
         free($2); 
     }
     ;
