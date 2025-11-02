@@ -19,12 +19,12 @@ void optimize_code(ASTNode *ast)
 
     analyze_variable_usage(ast, var_table, "global");
 
-    optimize_unused_variables(ast, var_table, "global");
+    // optimize_unused_variables(ast, var_table, "global");
     optimize_constant_folding(ast);
     optimize_unreachable_code(ast, var_table, "global");
     optimize_empty_blocks(ast);
 
-    dead_store_elimination(ast, NULL);
+    dead_store_elimination(ast, NULL, 0);
 
     remove_dead_code(ast);
 
@@ -791,7 +791,58 @@ void optimize_unreachable_code(ASTNode *node, VariableTable *table, char *curren
     optimize_unreachable_code(node->next, table, current_scope);
 }
 
-void dead_store_elimination(ASTNode *node, DSETable **table)
+void check_dse_table(DSETable *table)
+{
+    for (DSETable *aux = table->next; aux; aux = aux->next)
+    {
+        DSETable *entry = aux;
+
+        if (entry->node->type == NODE_DECLARATION || entry->node->type == NODE_ASSIGNMENT)
+        {
+            DSETable *check = table->next;
+            while (check)
+            {
+                if (strcmp(check->name, entry->name) == 0 && check->node->type == NODE_IDENTIFIER)
+                {
+                    break;
+                }
+                check = check->next;
+            }
+            if (!check)
+            {
+                entry->node->is_dead_code = 1;
+            }
+        }
+
+        
+        if (entry->node->type == NODE_ASSIGNMENT)
+        {
+            DSETable *check = entry->next;
+            while (check)
+            {
+                if (strcmp(check->name, entry->name) == 0)
+                {
+                    AssignmentNode *assign = (AssignmentNode *)check->node;
+                    if (assign->op == OP_ASSIGN)
+                    {
+                        if (entry->block_level > check->block_level) break;
+                        entry->node->is_dead_code = 1;
+                    }
+                    break;
+                }
+                check = check->next;
+            }
+        }
+
+        
+        // if (entry->node->type == NODE_DECLARATION)
+        
+        // table->next = entry->next;
+        // free(entry);
+    }
+}
+
+void dead_store_elimination(ASTNode *node, DSETable **table, int block_level)
 {
     if (node == NULL)
         return;
@@ -807,30 +858,10 @@ void dead_store_elimination(ASTNode *node, DSETable **table)
 
         DSETable *current = prog_table;
 
-        dead_store_elimination(prog->statements, &current);
+        dead_store_elimination(prog->statements, &current, block_level);
 
-        while (prog_table->next)
-        {
-            DSETable *entry = prog_table->next;
-            if (entry->node->type == NODE_ASSIGNMENT)
-            {
-                DSETable *check = entry->next;
-                while (check && strcmp(check->name, entry->name) != 0)
-                {
-                    check = check->next;
-                }
+        check_dse_table(prog_table);
 
-                if (check)
-                {
-                    if (check->node->type == NODE_ASSIGNMENT)
-                    {
-                        entry->node->is_dead_code = 1;
-                    }
-                }
-            }
-            prog_table->next = entry->next;
-            free(entry);
-        }
         break;
     }
     case NODE_DECLARATION:
@@ -842,11 +873,12 @@ void dead_store_elimination(ASTNode *node, DSETable **table)
             new_entry->name = decl->name;
             new_entry->next = NULL;
             new_entry->node = node;
+            new_entry->block_level = block_level;
             (*table)->next = new_entry;
             *table = new_entry;
         }
 
-        dead_store_elimination(decl->initial_value, table);
+        dead_store_elimination(decl->initial_value, table, block_level);
         break;
     }
     case NODE_ASSIGNMENT:
@@ -854,17 +886,15 @@ void dead_store_elimination(ASTNode *node, DSETable **table)
         AssignmentNode *assign = (AssignmentNode *)node;
         if (assign->variable && !node->is_dead_code)
         {
-            if (assign->op == OP_ASSIGN)
-            {
-                DSETable *new_entry = malloc(sizeof(DSETable));
-                new_entry->name = assign->variable;
-                new_entry->next = NULL;
-                new_entry->node = node;
-                (*table)->next = new_entry;
-                *table = new_entry;
-            }
+            DSETable *new_entry = malloc(sizeof(DSETable));
+            new_entry->name = assign->variable;
+            new_entry->next = NULL;
+            new_entry->node = node;
+            new_entry->block_level = block_level;
+            (*table)->next = new_entry;
+            *table = new_entry;
         }
-        dead_store_elimination(assign->value, table);
+        dead_store_elimination(assign->value, table, block_level);
         break;
     }
     case NODE_IDENTIFIER:
@@ -876,6 +906,7 @@ void dead_store_elimination(ASTNode *node, DSETable **table)
             new_entry->name = id->name;
             new_entry->next = NULL;
             new_entry->node = node;
+            new_entry->block_level = block_level;
             (*table)->next = new_entry;
             *table = new_entry;
         }
@@ -884,39 +915,43 @@ void dead_store_elimination(ASTNode *node, DSETable **table)
     case NODE_EXPRESSION:
     {
         ExpressionNode *expr = (ExpressionNode *)node;
-        dead_store_elimination(expr->left, table);
-        dead_store_elimination(expr->right, table);
+        dead_store_elimination(expr->left, table, block_level);
+        dead_store_elimination(expr->right, table, block_level);
         break;
     }
     case NODE_CONDITION:
     {
         ConditionNode *cond = (ConditionNode *)node;
-        dead_store_elimination(cond->left, table);
-        dead_store_elimination(cond->right, table);
+        dead_store_elimination(cond->left, table, block_level);
+        dead_store_elimination(cond->right, table, block_level);
         break;
     }
     case NODE_IF_STATEMENT:
     {
         IfNode *if_node = (IfNode *)node;
-        dead_store_elimination(if_node->condition, table);
-        dead_store_elimination(if_node->then_statement, table);
-        dead_store_elimination(if_node->else_statement, table);
+        dead_store_elimination(if_node->condition, table, block_level);
+        dead_store_elimination(if_node->then_statement, table, block_level);
+        dead_store_elimination(if_node->else_statement, table, block_level);
         break;
     }
     case NODE_WHILE_STATEMENT:
     {
         WhileNode *while_node = (WhileNode *)node;
-        dead_store_elimination(while_node->condition, table);
-        dead_store_elimination(while_node->body, table);
+        block_level++;
+        dead_store_elimination(while_node->condition, table, block_level);
+        dead_store_elimination(while_node->body, table, block_level);
+        block_level--;
         break;
     }
     case NODE_FOR_STATEMENT:
     {
         ForNode *for_node = (ForNode *)node;
-        dead_store_elimination(for_node->init, table);
-        dead_store_elimination(for_node->condition, table);
-        dead_store_elimination(for_node->increment, table);
-        dead_store_elimination(for_node->body, table);
+        block_level++;
+        dead_store_elimination(for_node->init, table, block_level);
+        dead_store_elimination(for_node->condition, table, block_level);
+        dead_store_elimination(for_node->increment, table, block_level);
+        dead_store_elimination(for_node->body, table, block_level);
+        block_level--;
         break;
     }
     case NODE_COMPOUND_STATEMENT:
@@ -924,14 +959,14 @@ void dead_store_elimination(ASTNode *node, DSETable **table)
         CompoundNode *comp = (CompoundNode *)node;
         if (comp->statements)
         {
-            dead_store_elimination(comp->statements, table);
+            dead_store_elimination(comp->statements, table, block_level);
         }
         break;
     }
     case NODE_RETURN:
     {
         ReturnNode *ret = (ReturnNode *)node;
-        dead_store_elimination(ret->value, table);
+        dead_store_elimination(ret->value, table, block_level);
         break;
     }
     case NODE_FUNCTION_DEF:
@@ -943,58 +978,37 @@ void dead_store_elimination(ASTNode *node, DSETable **table)
 
         DSETable *current = func_table;
 
-        dead_store_elimination(func->parameters, &current);
-        dead_store_elimination(func->body, &current);
+        dead_store_elimination(func->parameters, &current, block_level);
+        dead_store_elimination(func->body, &current, block_level);
 
-        while (func_table->next)
-        {
-            DSETable *entry = func_table->next;
-            if (entry->node->type == NODE_ASSIGNMENT)
-            {
-                DSETable *check = entry->next;
-                while (check && strcmp(check->name, entry->name) != 0)
-                {
-                    check = check->next;
-                }
-
-                if (check)
-                {
-                    if (check->node->type == NODE_ASSIGNMENT)
-                    {
-                        entry->node->is_dead_code = 1;
-                    }
-                }
-            }
-            func_table->next = entry->next;
-            free(entry);
-        }
+        check_dse_table(func_table);
 
         break;
     }
     case NODE_FUNCTION_CALL:
     {
         FunctionCallNode *call = (FunctionCallNode *)node;
-        dead_store_elimination(call->arguments, table);
+        dead_store_elimination(call->arguments, table, block_level);
         break;
     }
     case NODE_BINARY_OP:
     {
         BinaryOpNode *bin = (BinaryOpNode *)node;
-        dead_store_elimination(bin->left, table);
-        dead_store_elimination(bin->right, table);
+        dead_store_elimination(bin->left, table, block_level);
+        dead_store_elimination(bin->right, table, block_level);
         break;
     }
     case NODE_UNARY_OP:
     {
         UnaryOpNode *unary = (UnaryOpNode *)node;
-        dead_store_elimination(unary->operand, table);
+        dead_store_elimination(unary->operand, table, block_level);
         break;
     }
     default:
         break;
     }
 
-    dead_store_elimination(node->next, table);
+    dead_store_elimination(node->next, table, block_level);
 }
 
 void optimize_empty_blocks(ASTNode *node)

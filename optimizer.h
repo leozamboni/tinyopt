@@ -33,6 +33,7 @@ typedef struct {
 
 typedef struct DSETable {
     char *name;
+    int block_level;
     struct DSETable *next;
     ASTNode *node;
 } DSETable;
@@ -46,7 +47,7 @@ void analyze_variable_usage(ASTNode *node, VariableTable *table, char *current_s
 void optimize_unused_variables(ASTNode *node, VariableTable *table, char *current_scope);
 void optimize_constant_folding(ASTNode *node);
 void optimize_unreachable_code(ASTNode *node, VariableTable *table, char *current_scope);
-void dead_store_elimination(ASTNode *node, DSETable **table);
+void dead_store_elimination(ASTNode *node, DSETable **table, int block_level);
 void optimize_empty_blocks(ASTNode *node);
 
 int is_condition_always_true(ASTNode *condition, VariableTable *table, char *current_scope);
