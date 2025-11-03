@@ -785,11 +785,6 @@ void liveness_and_dead_store_elimination(ASTNode *node, DSETable **table, uint64
         }
         break;
     }
-    // case NODE_PARAMETER_LIST:
-    // {
-    //     break;
-    // }
-    
     case NODE_EXPRESSION:
     {
         ExpressionNode *expr = (ExpressionNode *)node;
