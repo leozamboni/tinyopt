@@ -35,14 +35,16 @@ int asprintf(char **strp, const char *fmt, ...) {
 %union {
     char* str;
     void* node;
+    unsigned long hash;
 }
 
 %token <str> ID NUMBER CHAR_LITERAL STRING_LITERAL
 %token INT FLOAT CHAR VOID RETURN
-%token IF ELSE WHILE FOR BREAK CONTINUE
+%token IF ELSE BREAK CONTINUE
 %token EQ NE LE GE AND OR
 %token INC DEC
 %token ADD_ASSIGN SUB_ASSIGN MUL_ASSIGN DIV_ASSIGN MOD_ASSIGN
+%token <hash> WHILE FOR
 
 %type <node> expression statement declaration assignment
 %type <node> condition compound_statement
@@ -184,40 +186,40 @@ if_statement:
 
 while_statement:
     WHILE '(' condition ')' statement { 
-        $$ = create_while_node($3, $5);
+        $$ = create_while_node($3, $5, $1);
     }
     ;
 
 for_statement:
     FOR '(' declaration ';' condition ';' assignment ')' statement { 
-        $$ = create_for_node($3, $5, $7, $9);
+        $$ = create_for_node($3, $5, $7, $9, $1);
     }
     | FOR '(' assignment ';' condition ';' assignment ')' statement { 
-        $$ = create_for_node($3, $5, $7, $9);
+        $$ = create_for_node($3, $5, $7, $9, $1);
     }
     | FOR '(' ';' condition ';' assignment ')' statement { 
-        $$ = create_for_node(NULL, $4, $6, $8);
+        $$ = create_for_node(NULL, $4, $6, $8, $1);
     }
     | FOR '(' declaration ';' ';' assignment ')' statement { 
-        $$ = create_for_node($3, NULL, $6, $8);
+        $$ = create_for_node($3, NULL, $6, $8, $1);
     }
     | FOR '(' assignment ';' ';' assignment ')' statement { 
-        $$ = create_for_node($3, NULL, $6, $8);
+        $$ = create_for_node($3, NULL, $6, $8, $1);
     }
     | FOR '(' ';' ';' assignment ')' statement { 
-        $$ = create_for_node(NULL, NULL, $5, $7);
+        $$ = create_for_node(NULL, NULL, $5, $7, $1);
     }
     | FOR '(' declaration ';' condition ';' ')' statement { 
-        $$ = create_for_node($3, $5, NULL, $8);
+        $$ = create_for_node($3, $5, NULL, $8, $1);
     }
     | FOR '(' assignment ';' condition ';' ')' statement { 
-        $$ = create_for_node($3, $5, NULL, $8);
+        $$ = create_for_node($3, $5, NULL, $8, $1);
     }
     | FOR '(' ';' condition ';' ')' statement { 
-        $$ = create_for_node(NULL, $4, NULL, $7);
+        $$ = create_for_node(NULL, $4, NULL, $7, $1);
     }
     | FOR '(' ';' ';' ')' statement { 
-        $$ = create_for_node(NULL, NULL, NULL, $6);
+        $$ = create_for_node(NULL, NULL, NULL, $6, $1);
     }
     ;
 
@@ -329,34 +331,20 @@ function_call:
         $$ = create_function_call_node($1, NULL);
         free($1);
     }
-    | ID '(' argument_list ')' {
+  | ID '(' argument_list ')' {
         $$ = create_function_call_node($1, $3);
         free($1);
     }
-    ;
+  ;
 
 argument_list:
     expression {
-        // Criar uma lista com um único elemento
-        ProgramNode *prog = (ProgramNode*)create_program_node();
-        add_statement((ASTNode*)prog, $1);
-        $$ = (ASTNode*)prog;
+        $$ = add_args(NULL, $1);
     }
-    | argument_list ',' expression {
-        // Adicionar à lista existente
-        ASTNode *arg_list = (ASTNode*)$1;
-        if (arg_list && arg_list->type == NODE_PROGRAM) {
-            add_statement(arg_list, $3);
-            $$ = arg_list;
-        } else {
-            // Fallback: criar nova lista
-            ProgramNode *prog = (ProgramNode*)create_program_node();
-            if (arg_list) add_statement((ASTNode*)prog, arg_list);
-            add_statement((ASTNode*)prog, $3);
-            $$ = (ASTNode*)prog;
-        }
+  | argument_list ',' expression {
+        $$ = add_args($1, $3);
     }
-    ;
+  ;
 
 function_def:
     INT ID '(' ')' compound_statement {
@@ -413,6 +401,9 @@ parameter_list:
             add_statement((ASTNode*)prog, $3);
             $$ = (ASTNode*)prog;
         }
+    }
+    | VOID {
+        $$ = NULL;
     }
     ;
 

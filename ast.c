@@ -79,19 +79,20 @@ ASTNode* create_if_node(ASTNode *condition, ASTNode *then_stmt, ASTNode *else_st
     return (ASTNode*)node;
 }
 
-ASTNode* create_while_node(ASTNode *condition, ASTNode *body) {
+ASTNode* create_while_node(ASTNode *condition, ASTNode *body, uint64_t loop_hash) {
     WhileNode *node = malloc(sizeof(WhileNode));
     node->base.type = NODE_WHILE_STATEMENT;
     node->base.next = NULL;
     node->base.parent = NULL;
     node->base.line = 0;
     node->base.is_dead_code = 0;
+    node->loop_hash = loop_hash;
     node->condition = condition;
     node->body = body;
     return (ASTNode*)node;
 }
 
-ASTNode* create_for_node(ASTNode *init, ASTNode *condition, ASTNode *increment, ASTNode *body) {
+ASTNode* create_for_node(ASTNode *init, ASTNode *condition, ASTNode *increment, ASTNode *body, uint64_t loop_hash) {
     ForNode *node = malloc(sizeof(ForNode));
     node->base.type = NODE_FOR_STATEMENT;
     node->base.next = NULL;
@@ -102,6 +103,7 @@ ASTNode* create_for_node(ASTNode *init, ASTNode *condition, ASTNode *increment, 
     node->condition = condition;
     node->increment = increment;
     node->body = body;
+    node->loop_hash = loop_hash;
     return (ASTNode*)node;
 }
 
@@ -225,17 +227,14 @@ ASTNode* create_function_def_node(DataType return_type, char *name, ASTNode *par
     return (ASTNode*)node;
 }
 
-ASTNode* create_function_call_node(char *name, ASTNode *arguments) {
+ASTNode *create_function_call_node(char *name, ASTNode *arguments) {
     FunctionCallNode *node = malloc(sizeof(FunctionCallNode));
     node->base.type = NODE_FUNCTION_CALL;
-    node->base.next = NULL;
-    node->base.parent = NULL;
-    node->base.line = 0;
-    node->base.is_dead_code = 0;
     node->name = strdup(name);
     node->arguments = arguments;
-    return (ASTNode*)node;
+    return (ASTNode *)node;
 }
+
 
 ASTNode* create_parameter_list_node(ASTNode *parameters) {
     ParameterListNode *node = malloc(sizeof(ParameterListNode));
@@ -264,6 +263,23 @@ void add_statement(ASTNode *program, ASTNode *statement) {
         }
         current->next = statement;
     }
+}
+
+ASTNode *add_args(ASTNode *list, ASTNode *expr) {
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node = expr = expr;
+    node->next = NULL;
+
+    if (list == NULL) {
+        return node;
+    }
+    
+    ASTNode *aux = list;
+    while (aux->next != NULL)
+        aux = aux->next;
+    aux->next = node;
+
+    return list;
 }
 
 void free_ast(ASTNode *node) {

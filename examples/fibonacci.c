@@ -1,7 +1,7 @@
 int
-main ()
+main (void)
 {
-  int n; 
+  int n;
   int i;
   int t1 = 0; 
   int t2 = 1; 
@@ -10,20 +10,18 @@ main ()
   n = 5;
   if (n == 20)
     {
-      n = 10;			
+      n = 10;
     }
-  n = 1;			
-  n = 2;			
-  n = 10;			
+  n = 10;
 
-  int v = 5;			
+  int v = 5;
   i = 1 - 1;
   for (; i < n; i++)
-    {      
+    {
       nextTerm = t1 + t2;
       t1 = t2;
       t2 = nextTerm;
     }
-  t1 = 10;
+
   return 0;
 }

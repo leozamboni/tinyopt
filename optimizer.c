@@ -17,15 +17,13 @@ void optimize_code(ASTNode *ast)
 {
     VariableTable *var_table = create_variable_table();
 
-    analyze_variable_usage(ast, var_table, "global");
+    set_var_table(ast, var_table, "global");
 
-    // optimize_unused_variables(ast, var_table, "global");
-    optimize_constant_folding(ast);
-    optimize_unreachable_code(ast, var_table, "global");
-    optimize_empty_blocks(ast);
-
-    dead_store_elimination(ast, NULL, 0);
-
+    constant_folding(ast);
+    reachability_analysis(ast, var_table, "global");
+    empty_blocks(ast);
+    liveness_and_dead_store_elimination(ast, NULL, 0);
+    
     remove_dead_code(ast);
 
     // print_optimization_report(ast);
@@ -33,7 +31,7 @@ void optimize_code(ASTNode *ast)
     free_variable_table(var_table);
 }
 
-void analyze_variable_usage(ASTNode *node, VariableTable *table, char *current_scope)
+void set_var_table(ASTNode *node, VariableTable *table, char *current_scope)
 {
     if (node == NULL)
         return;
@@ -43,7 +41,7 @@ void analyze_variable_usage(ASTNode *node, VariableTable *table, char *current_s
     case NODE_PROGRAM:
     {
         ProgramNode *prog = (ProgramNode *)node;
-        analyze_variable_usage(prog->statements, table, current_scope);
+        set_var_table(prog->statements, table, current_scope);
         break;
     }
     case NODE_DECLARATION:
@@ -52,20 +50,13 @@ void analyze_variable_usage(ASTNode *node, VariableTable *table, char *current_s
         if (decl->name)
         {
             add_variable(table, current_scope, decl->name);
-            VariableInfo *var = find_variable(table, current_scope, decl->name);
-            if (var)
+            if (decl->initial_value)
             {
-                var->is_defined = 1;
+                VariableValue *value = create_variable_value_from_node(decl->initial_value, table, current_scope);
+                set_variable_value(table, current_scope, decl->name, value);
             }
         }
-
-        if (decl->initial_value)
-        {
-            VariableValue *value = create_variable_value_from_node(decl->initial_value, table, current_scope);
-            set_variable_value(table, current_scope, decl->name, value);
-        }
-
-        analyze_variable_usage(decl->initial_value, table, current_scope);
+        set_var_table(decl->initial_value, table, current_scope);
         break;
     }
     case NODE_ASSIGNMENT:
@@ -74,68 +65,48 @@ void analyze_variable_usage(ASTNode *node, VariableTable *table, char *current_s
         if (assign->variable)
         {
             add_variable(table, current_scope, assign->variable);
-
             VariableValue *value = create_variable_value_from_node(assign->value, table, current_scope);
             set_variable_value(table, current_scope, assign->variable, value);
-
-            VariableInfo *var = find_variable(table, current_scope, assign->variable);
-            if (var)
-            {
-                var->is_defined = 1;
-            }
         }
-        analyze_variable_usage(assign->value, table, current_scope);
-        break;
-    }
-    case NODE_IDENTIFIER:
-    {
-        IdentifierNode *id = (IdentifierNode *)node;
-        if (id->name)
-        {
-            VariableInfo *var = find_variable(table, current_scope, id->name);
-            if (var)
-            {
-                var->is_used = 1;
-            }
-        }
+        set_var_table(assign->value, table, current_scope);
         break;
     }
     case NODE_EXPRESSION:
     {
         ExpressionNode *expr = (ExpressionNode *)node;
-        analyze_variable_usage(expr->left, table, current_scope);
-        analyze_variable_usage(expr->right, table, current_scope);
+        set_var_table(expr->left, table, current_scope);
+        set_var_table(expr->right, table, current_scope);
         break;
     }
     case NODE_CONDITION:
     {
         ConditionNode *cond = (ConditionNode *)node;
-        analyze_variable_usage(cond->left, table, current_scope);
-        analyze_variable_usage(cond->right, table, current_scope);
+        set_var_table(cond->left, table, current_scope);
+        set_var_table(cond->right, table, current_scope);
         break;
     }
     case NODE_IF_STATEMENT:
     {
         IfNode *if_node = (IfNode *)node;
-        analyze_variable_usage(if_node->condition, table, current_scope);
-        analyze_variable_usage(if_node->then_statement, table, current_scope);
-        analyze_variable_usage(if_node->else_statement, table, current_scope);
+        set_var_table(if_node->condition, table, current_scope);
+        set_var_table(if_node->then_statement, table, current_scope);
+        set_var_table(if_node->else_statement, table, current_scope);
         break;
     }
     case NODE_WHILE_STATEMENT:
     {
         WhileNode *while_node = (WhileNode *)node;
-        analyze_variable_usage(while_node->condition, table, current_scope);
-        analyze_variable_usage(while_node->body, table, current_scope);
+        set_var_table(while_node->condition, table, current_scope);
+        set_var_table(while_node->body, table, current_scope);
         break;
     }
     case NODE_FOR_STATEMENT:
     {
         ForNode *for_node = (ForNode *)node;
-        analyze_variable_usage(for_node->init, table, current_scope);
-        analyze_variable_usage(for_node->condition, table, current_scope);
-        analyze_variable_usage(for_node->increment, table, current_scope);
-        analyze_variable_usage(for_node->body, table, current_scope);
+        set_var_table(for_node->init, table, current_scope);
+        set_var_table(for_node->condition, table, current_scope);
+        set_var_table(for_node->increment, table, current_scope);
+        set_var_table(for_node->body, table, current_scope);
         break;
     }
     case NODE_COMPOUND_STATEMENT:
@@ -143,47 +114,47 @@ void analyze_variable_usage(ASTNode *node, VariableTable *table, char *current_s
         CompoundNode *comp = (CompoundNode *)node;
         if (comp->statements)
         {
-            analyze_variable_usage(comp->statements, table, current_scope);
+            set_var_table(comp->statements, table, current_scope);
         }
         break;
     }
     case NODE_RETURN:
     {
         ReturnNode *ret = (ReturnNode *)node;
-        analyze_variable_usage(ret->value, table, current_scope);
+        set_var_table(ret->value, table, current_scope);
         break;
     }
     case NODE_FUNCTION_DEF:
     {
         FunctionDefNode *func = (FunctionDefNode *)node;
-        analyze_variable_usage(func->parameters, table, func->name);
-        analyze_variable_usage(func->body, table, func->name);
+        set_var_table(func->parameters, table, func->name);
+        set_var_table(func->body, table, func->name);
         break;
     }
     case NODE_FUNCTION_CALL:
     {
         FunctionCallNode *call = (FunctionCallNode *)node;
-        analyze_variable_usage(call->arguments, table, current_scope);
+        set_var_table(call->arguments, table, current_scope);
         break;
     }
     case NODE_BINARY_OP:
     {
         BinaryOpNode *bin = (BinaryOpNode *)node;
-        analyze_variable_usage(bin->left, table, current_scope);
-        analyze_variable_usage(bin->right, table, current_scope);
+        set_var_table(bin->left, table, current_scope);
+        set_var_table(bin->right, table, current_scope);
         break;
     }
     case NODE_UNARY_OP:
     {
         UnaryOpNode *unary = (UnaryOpNode *)node;
-        analyze_variable_usage(unary->operand, table, current_scope);
+        set_var_table(unary->operand, table, current_scope);
         break;
     }
     default:
         break;
     }
 
-    analyze_variable_usage(node->next, table, current_scope);
+    set_var_table(node->next, table, current_scope);
 }
 
 VariableValue *create_variable_value_from_node(ASTNode *node, VariableTable *table, char *current_scope)
@@ -221,113 +192,7 @@ VariableValue *create_variable_value_from_node(ASTNode *node, VariableTable *tab
     return value;
 }
 
-void optimize_unused_variables(ASTNode *node, VariableTable *table, char *current_scope)
-{
-    if (node == NULL)
-        return;
-
-    switch (node->type)
-    {
-    case NODE_PROGRAM:
-    {
-        ProgramNode *prog = (ProgramNode *)node;
-        optimize_unused_variables(prog->statements, table, current_scope);
-        break;
-    }
-    case NODE_DECLARATION:
-    {
-        DeclarationNode *decl = (DeclarationNode *)node;
-        if (decl->name)
-        {
-            VariableInfo *var = find_variable(table, current_scope, decl->name);
-            if (var && var->is_defined && !var->is_used)
-            {
-                node->is_dead_code = 1;
-            }
-        }
-        break;
-    }
-    case NODE_ASSIGNMENT:
-    {
-        AssignmentNode *assign = (AssignmentNode *)node;
-        if (assign->variable)
-        {
-            VariableInfo *var = find_variable(table, current_scope, assign->variable);
-            if (var && var->is_defined && !var->is_used)
-            {
-                node->is_dead_code = 1;
-            }
-        }
-        optimize_unused_variables(assign->value, table, current_scope);
-        break;
-    }
-    case NODE_COMPOUND_STATEMENT:
-    {
-        CompoundNode *comp = (CompoundNode *)node;
-        optimize_unused_variables(comp->statements, table, current_scope);
-        break;
-    }
-    case NODE_IF_STATEMENT:
-    {
-        IfNode *i = (IfNode *)node;
-        optimize_unused_variables(i->then_statement, table, current_scope);
-        optimize_unused_variables(i->else_statement, table, current_scope);
-        break;
-    }
-    case NODE_WHILE_STATEMENT:
-    {
-        WhileNode *w = (WhileNode *)node;
-        optimize_unused_variables(w->body, table, current_scope);
-        break;
-    }
-    case NODE_FOR_STATEMENT:
-    {
-        ForNode *f = (ForNode *)node;
-        optimize_unused_variables(f->init, table, current_scope);
-        optimize_unused_variables(f->body, table, current_scope);
-        optimize_unused_variables(f->increment, table, current_scope);
-        break;
-    }
-    case NODE_FUNCTION_DEF:
-    {
-        FunctionDefNode *func = (FunctionDefNode *)node;
-        optimize_unused_variables(func->body, table, func->name);
-        break;
-    }
-    case NODE_RETURN:
-    {
-        ReturnNode *ret = (ReturnNode *)node;
-        optimize_unused_variables(ret->value, table, current_scope);
-        break;
-    }
-    case NODE_BINARY_OP:
-    {
-        BinaryOpNode *bin = (BinaryOpNode *)node;
-        optimize_unused_variables(bin->left, table, current_scope);
-        optimize_unused_variables(bin->right, table, current_scope);
-        break;
-    }
-    case NODE_UNARY_OP:
-    {
-        UnaryOpNode *unary = (UnaryOpNode *)node;
-        optimize_unused_variables(unary->operand, table, current_scope);
-        break;
-    }
-    case NODE_CONDITION:
-    {
-        ConditionNode *cond = (ConditionNode *)node;
-        optimize_unused_variables(cond->left, table, current_scope);
-        optimize_unused_variables(cond->right, table, current_scope);
-        break;
-    }
-    default:
-        break;
-    }
-
-    optimize_unused_variables(node->next, table, current_scope);
-}
-
-void optimize_constant_folding(ASTNode *node)
+void constant_folding(ASTNode *node)
 {
     if (node == NULL)
         return;
@@ -670,7 +535,7 @@ void mark_subtree_dead(ASTNode *node)
     // mark_subtree_dead(node->next);
 }
 
-void optimize_unreachable_code(ASTNode *node, VariableTable *table, char *current_scope)
+void reachability_analysis(ASTNode *node, VariableTable *table, char *current_scope)
 {
     if (node == NULL)
         return;
@@ -680,7 +545,7 @@ void optimize_unreachable_code(ASTNode *node, VariableTable *table, char *curren
     case NODE_PROGRAM:
     {
         ProgramNode *prog = (ProgramNode *)node;
-        optimize_unreachable_code(prog->statements, table, current_scope);
+        reachability_analysis(prog->statements, table, current_scope);
         break;
     }
     case NODE_IF_STATEMENT:
@@ -706,9 +571,9 @@ void optimize_unreachable_code(ASTNode *node, VariableTable *table, char *curren
             }
         }
 
-        optimize_unreachable_code(if_node->condition, table, current_scope);
-        optimize_unreachable_code(if_node->then_statement, table, current_scope);
-        optimize_unreachable_code(if_node->else_statement, table, current_scope);
+        reachability_analysis(if_node->condition, table, current_scope);
+        reachability_analysis(if_node->then_statement, table, current_scope);
+        reachability_analysis(if_node->else_statement, table, current_scope);
         break;
     }
     case NODE_WHILE_STATEMENT:
@@ -724,8 +589,8 @@ void optimize_unreachable_code(ASTNode *node, VariableTable *table, char *curren
             node->is_dead_code = 1;
         }
 
-        optimize_unreachable_code(while_node->condition, table, current_scope);
-        optimize_unreachable_code(while_node->body, table, current_scope);
+        reachability_analysis(while_node->condition, table, current_scope);
+        reachability_analysis(while_node->body, table, current_scope);
         break;
     }
     case NODE_FOR_STATEMENT:
@@ -740,10 +605,10 @@ void optimize_unreachable_code(ASTNode *node, VariableTable *table, char *curren
             }
             node->is_dead_code = 1;
         }
-        optimize_unreachable_code(for_node->init, table, current_scope);
-        optimize_unreachable_code(for_node->condition, table, current_scope);
-        optimize_unreachable_code(for_node->increment, table, current_scope);
-        optimize_unreachable_code(for_node->body, table, current_scope);
+        reachability_analysis(for_node->init, table, current_scope);
+        reachability_analysis(for_node->condition, table, current_scope);
+        reachability_analysis(for_node->increment, table, current_scope);
+        reachability_analysis(for_node->body, table, current_scope);
         break;
     }
     case NODE_COMPOUND_STATEMENT:
@@ -751,7 +616,7 @@ void optimize_unreachable_code(ASTNode *node, VariableTable *table, char *curren
         CompoundNode *comp = (CompoundNode *)node;
         if (comp->statements)
         {
-            optimize_unreachable_code(comp->statements, table, current_scope);
+            reachability_analysis(comp->statements, table, current_scope);
         }
         break;
     }
@@ -766,13 +631,13 @@ void optimize_unreachable_code(ASTNode *node, VariableTable *table, char *curren
     case NODE_FUNCTION_DEF:
     {
         FunctionDefNode *func = (FunctionDefNode *)node;
-        optimize_unreachable_code(func->body, table, func->name);
+        reachability_analysis(func->body, table, func->name);
         break;
     }
     case NODE_FUNCTION_CALL:
     {
         FunctionCallNode *call = (FunctionCallNode *)node;
-        optimize_unreachable_code(call->arguments, table, current_scope);
+        reachability_analysis(call->arguments, table, current_scope);
         break;
     }
     case NODE_BREAK:
@@ -788,7 +653,7 @@ void optimize_unreachable_code(ASTNode *node, VariableTable *table, char *curren
         break;
     }
 
-    optimize_unreachable_code(node->next, table, current_scope);
+    reachability_analysis(node->next, table, current_scope);
 }
 
 void check_dse_table(DSETable *table)
@@ -799,7 +664,21 @@ void check_dse_table(DSETable *table)
 
         if (entry->node->type == NODE_DECLARATION || entry->node->type == NODE_ASSIGNMENT)
         {
-            DSETable *check = table->next;
+            DSETable *check = entry->next;
+            if (entry->loop_hash)
+            {
+                DSETable *aux_check = table->next;
+                while (aux_check)
+                {
+                    if (aux_check->loop_hash == entry->loop_hash)
+                    {
+                        break;
+                    }
+                    aux_check = aux_check->next;
+                }
+                check = aux_check;
+            }
+
             while (check)
             {
                 if (strcmp(check->name, entry->name) == 0 && check->node->type == NODE_IDENTIFIER)
@@ -814,7 +693,6 @@ void check_dse_table(DSETable *table)
             }
         }
 
-        
         if (entry->node->type == NODE_ASSIGNMENT)
         {
             DSETable *check = entry->next;
@@ -825,7 +703,8 @@ void check_dse_table(DSETable *table)
                     AssignmentNode *assign = (AssignmentNode *)check->node;
                     if (assign->op == OP_ASSIGN)
                     {
-                        if (entry->block_level > check->block_level) break;
+                        if (entry->loop_hash && !check->loop_hash)
+                            break;
                         entry->node->is_dead_code = 1;
                     }
                     break;
@@ -833,16 +712,10 @@ void check_dse_table(DSETable *table)
                 check = check->next;
             }
         }
-
-        
-        // if (entry->node->type == NODE_DECLARATION)
-        
-        // table->next = entry->next;
-        // free(entry);
     }
 }
 
-void dead_store_elimination(ASTNode *node, DSETable **table, int block_level)
+void liveness_and_dead_store_elimination(ASTNode *node, DSETable **table, uint64_t loop_hash)
 {
     if (node == NULL)
         return;
@@ -858,7 +731,7 @@ void dead_store_elimination(ASTNode *node, DSETable **table, int block_level)
 
         DSETable *current = prog_table;
 
-        dead_store_elimination(prog->statements, &current, block_level);
+        liveness_and_dead_store_elimination(prog->statements, &current, loop_hash);
 
         check_dse_table(prog_table);
 
@@ -871,14 +744,14 @@ void dead_store_elimination(ASTNode *node, DSETable **table, int block_level)
         {
             DSETable *new_entry = malloc(sizeof(DSETable));
             new_entry->name = decl->name;
+            new_entry->loop_hash = loop_hash;
             new_entry->next = NULL;
             new_entry->node = node;
-            new_entry->block_level = block_level;
             (*table)->next = new_entry;
             *table = new_entry;
         }
 
-        dead_store_elimination(decl->initial_value, table, block_level);
+        liveness_and_dead_store_elimination(decl->initial_value, table, loop_hash);
         break;
     }
     case NODE_ASSIGNMENT:
@@ -888,13 +761,13 @@ void dead_store_elimination(ASTNode *node, DSETable **table, int block_level)
         {
             DSETable *new_entry = malloc(sizeof(DSETable));
             new_entry->name = assign->variable;
+            new_entry->loop_hash = loop_hash;
             new_entry->next = NULL;
             new_entry->node = node;
-            new_entry->block_level = block_level;
             (*table)->next = new_entry;
             *table = new_entry;
         }
-        dead_store_elimination(assign->value, table, block_level);
+        liveness_and_dead_store_elimination(assign->value, table, loop_hash);
         break;
     }
     case NODE_IDENTIFIER:
@@ -903,55 +776,56 @@ void dead_store_elimination(ASTNode *node, DSETable **table, int block_level)
         if (id->name && !node->is_dead_code)
         {
             DSETable *new_entry = malloc(sizeof(DSETable));
+            new_entry->loop_hash = loop_hash;
             new_entry->name = id->name;
             new_entry->next = NULL;
             new_entry->node = node;
-            new_entry->block_level = block_level;
             (*table)->next = new_entry;
             *table = new_entry;
         }
         break;
     }
+    // case NODE_PARAMETER_LIST:
+    // {
+    //     break;
+    // }
+    
     case NODE_EXPRESSION:
     {
         ExpressionNode *expr = (ExpressionNode *)node;
-        dead_store_elimination(expr->left, table, block_level);
-        dead_store_elimination(expr->right, table, block_level);
+        liveness_and_dead_store_elimination(expr->left, table, loop_hash);
+        liveness_and_dead_store_elimination(expr->right, table, loop_hash);
         break;
     }
     case NODE_CONDITION:
     {
         ConditionNode *cond = (ConditionNode *)node;
-        dead_store_elimination(cond->left, table, block_level);
-        dead_store_elimination(cond->right, table, block_level);
+        liveness_and_dead_store_elimination(cond->left, table, loop_hash);
+        liveness_and_dead_store_elimination(cond->right, table, loop_hash);
         break;
     }
     case NODE_IF_STATEMENT:
     {
         IfNode *if_node = (IfNode *)node;
-        dead_store_elimination(if_node->condition, table, block_level);
-        dead_store_elimination(if_node->then_statement, table, block_level);
-        dead_store_elimination(if_node->else_statement, table, block_level);
+        liveness_and_dead_store_elimination(if_node->condition, table, loop_hash);
+        liveness_and_dead_store_elimination(if_node->then_statement, table, loop_hash);
+        liveness_and_dead_store_elimination(if_node->else_statement, table, loop_hash);
         break;
     }
     case NODE_WHILE_STATEMENT:
     {
         WhileNode *while_node = (WhileNode *)node;
-        block_level++;
-        dead_store_elimination(while_node->condition, table, block_level);
-        dead_store_elimination(while_node->body, table, block_level);
-        block_level--;
+        liveness_and_dead_store_elimination(while_node->condition, table, while_node->loop_hash);
+        liveness_and_dead_store_elimination(while_node->body, table, while_node->loop_hash);
         break;
     }
     case NODE_FOR_STATEMENT:
     {
         ForNode *for_node = (ForNode *)node;
-        block_level++;
-        dead_store_elimination(for_node->init, table, block_level);
-        dead_store_elimination(for_node->condition, table, block_level);
-        dead_store_elimination(for_node->increment, table, block_level);
-        dead_store_elimination(for_node->body, table, block_level);
-        block_level--;
+        liveness_and_dead_store_elimination(for_node->init, table, for_node->loop_hash);
+        liveness_and_dead_store_elimination(for_node->condition, table, for_node->loop_hash);
+        liveness_and_dead_store_elimination(for_node->increment, table, for_node->loop_hash);
+        liveness_and_dead_store_elimination(for_node->body, table, for_node->loop_hash);
         break;
     }
     case NODE_COMPOUND_STATEMENT:
@@ -959,14 +833,14 @@ void dead_store_elimination(ASTNode *node, DSETable **table, int block_level)
         CompoundNode *comp = (CompoundNode *)node;
         if (comp->statements)
         {
-            dead_store_elimination(comp->statements, table, block_level);
+            liveness_and_dead_store_elimination(comp->statements, table, loop_hash);
         }
         break;
     }
     case NODE_RETURN:
     {
         ReturnNode *ret = (ReturnNode *)node;
-        dead_store_elimination(ret->value, table, block_level);
+        liveness_and_dead_store_elimination(ret->value, table, loop_hash);
         break;
     }
     case NODE_FUNCTION_DEF:
@@ -978,40 +852,39 @@ void dead_store_elimination(ASTNode *node, DSETable **table, int block_level)
 
         DSETable *current = func_table;
 
-        dead_store_elimination(func->parameters, &current, block_level);
-        dead_store_elimination(func->body, &current, block_level);
+        liveness_and_dead_store_elimination(func->parameters, &current, loop_hash);
+        liveness_and_dead_store_elimination(func->body, &current, loop_hash);
 
         check_dse_table(func_table);
-
         break;
     }
     case NODE_FUNCTION_CALL:
     {
         FunctionCallNode *call = (FunctionCallNode *)node;
-        dead_store_elimination(call->arguments, table, block_level);
+        liveness_and_dead_store_elimination(call->arguments, table, loop_hash);
         break;
     }
     case NODE_BINARY_OP:
     {
         BinaryOpNode *bin = (BinaryOpNode *)node;
-        dead_store_elimination(bin->left, table, block_level);
-        dead_store_elimination(bin->right, table, block_level);
+        liveness_and_dead_store_elimination(bin->left, table, loop_hash);
+        liveness_and_dead_store_elimination(bin->right, table, loop_hash);
         break;
     }
     case NODE_UNARY_OP:
     {
         UnaryOpNode *unary = (UnaryOpNode *)node;
-        dead_store_elimination(unary->operand, table, block_level);
+        liveness_and_dead_store_elimination(unary->operand, table, loop_hash);
         break;
     }
     default:
         break;
     }
 
-    dead_store_elimination(node->next, table, block_level);
+    liveness_and_dead_store_elimination(node->next, table, loop_hash);
 }
 
-void optimize_empty_blocks(ASTNode *node)
+void empty_blocks(ASTNode *node)
 {
     if (node == NULL)
         return;
@@ -1021,7 +894,7 @@ void optimize_empty_blocks(ASTNode *node)
     case NODE_PROGRAM:
     {
         ProgramNode *prog = (ProgramNode *)node;
-        optimize_empty_blocks(prog->statements);
+        empty_blocks(prog->statements);
         break;
     }
     case NODE_COMPOUND_STATEMENT:
@@ -1033,40 +906,40 @@ void optimize_empty_blocks(ASTNode *node)
         }
         else
         {
-            optimize_empty_blocks(comp->statements);
+            empty_blocks(comp->statements);
         }
         break;
     }
     case NODE_IF_STATEMENT:
     {
         IfNode *i = (IfNode *)node;
-        optimize_empty_blocks(i->then_statement);
-        optimize_empty_blocks(i->else_statement);
+        empty_blocks(i->then_statement);
+        empty_blocks(i->else_statement);
         break;
     }
     case NODE_WHILE_STATEMENT:
     {
         WhileNode *w = (WhileNode *)node;
-        optimize_empty_blocks(w->body);
+        empty_blocks(w->body);
         break;
     }
     case NODE_FOR_STATEMENT:
     {
         ForNode *f = (ForNode *)node;
-        optimize_empty_blocks(f->body);
+        empty_blocks(f->body);
         break;
     }
     case NODE_FUNCTION_DEF:
     {
         FunctionDefNode *func = (FunctionDefNode *)node;
-        optimize_empty_blocks(func->body);
+        empty_blocks(func->body);
         break;
     }
     default:
         break;
     }
 
-    optimize_empty_blocks(node->next);
+    empty_blocks(node->next);
 }
 
 int is_condition_always_true(ASTNode *condition, VariableTable *table, char *current_scope)
@@ -1097,7 +970,7 @@ int is_condition_always_true(ASTNode *condition, VariableTable *table, char *cur
             {
                 IdentifierNode *left_id = (IdentifierNode *)c->left;
                 VariableInfo *left_var = find_variable(table, current_scope, left_id->name);
-                if (left_var && left_var->is_defined && left_var->value && left_var->value->type == VALUE_TYPE_INT)
+                if (left_var && left_var->value && left_var->value->type == VALUE_TYPE_INT)
                 {
                     a = left_var->value->number;
                 }
@@ -1114,7 +987,7 @@ int is_condition_always_true(ASTNode *condition, VariableTable *table, char *cur
             {
                 IdentifierNode *right_id = (IdentifierNode *)c->right;
                 VariableInfo *right_var = find_variable(table, current_scope, right_id->name);
-                if (right_var && right_var->is_defined && right_var->value && right_var->value->type == VALUE_TYPE_INT)
+                if (right_var && right_var->value && right_var->value->type == VALUE_TYPE_INT)
                 {
                     b = right_var->value->number;
                 }
@@ -1166,7 +1039,7 @@ int is_condition_always_false(ASTNode *condition, VariableTable *table, char *cu
             {
                 IdentifierNode *left_id = (IdentifierNode *)c->left;
                 VariableInfo *left_var = find_variable(table, current_scope, left_id->name);
-                if (left_var && left_var->is_defined && left_var->value && left_var->value->type == VALUE_TYPE_INT)
+                if (left_var && left_var->value && left_var->value->type == VALUE_TYPE_INT)
                 {
                     a = left_var->value->number;
                 }
@@ -1183,7 +1056,7 @@ int is_condition_always_false(ASTNode *condition, VariableTable *table, char *cu
             {
                 IdentifierNode *right_id = (IdentifierNode *)c->right;
                 VariableInfo *right_var = find_variable(table, current_scope, right_id->name);
-                if (right_var && right_var->is_defined && right_var->value && right_var->value->type == VALUE_TYPE_INT)
+                if (right_var && right_var->value && right_var->value->type == VALUE_TYPE_INT)
                 {
                     b = right_var->value->number;
                 }
@@ -1260,9 +1133,6 @@ void add_variable(VariableTable *table, char *scope, char *name)
 
     table->variables[table->count].name = strdup(name);
     table->variables[table->count].scope = strdup(scope);
-    table->variables[table->count].is_used = 0;
-    table->variables[table->count].is_defined = 0;
-    table->variables[table->count].is_dead = 0;
     table->variables[table->count].value = NULL;
     table->count++;
 }
@@ -1285,7 +1155,7 @@ VariableInfo *find_variable(VariableTable *table, char *scope, char *name)
 VariableInfo *set_variable_value(VariableTable *table, char *scope, char *name, VariableValue *value)
 {
     VariableInfo *var = find_variable(table, scope, name);
-    if (var && var->is_defined)
+    if (var)
     {
         var->value = value;
         return var;

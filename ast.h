@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 
 typedef enum {
     NODE_PROGRAM,
@@ -116,6 +117,7 @@ typedef struct {
     ASTNode base;
     struct ASTNode *condition;
     struct ASTNode *body;
+    uint64_t loop_hash;
 } WhileNode;
 
 typedef struct {
@@ -124,6 +126,7 @@ typedef struct {
     struct ASTNode *condition;
     struct ASTNode *increment;
     struct ASTNode *body;
+    uint64_t loop_hash;
 } ForNode;
 
 typedef struct {
@@ -179,19 +182,19 @@ typedef struct {
     ASTNode base;
     DataType return_type;
     char *name;
-    struct ASTNode *parameters;  // Lista de parâmetros (DeclarationNodes)
-    struct ASTNode *body;        // Corpo da função (CompoundNode)
+    struct ASTNode *parameters; 
+    struct ASTNode *body;      
 } FunctionDefNode;
 
 typedef struct {
     ASTNode base;
     char *name;
-    struct ASTNode *arguments;   // Lista de argumentos (expressões)
+    struct ASTNode *arguments;
 } FunctionCallNode;
 
 typedef struct {
     ASTNode base;
-    struct ASTNode *parameters;  // Lista de parâmetros ou argumentos
+    struct ASTNode *parameters;
 } ParameterListNode;
 
 ASTNode* create_program_node();
@@ -200,8 +203,8 @@ ASTNode* create_assignment_node(char *var, Operator op, ASTNode *value);
 ASTNode* create_expression_node(Operator op, ASTNode *left, ASTNode *right, char *value);
 ASTNode* create_condition_node(Operator op, ASTNode *left, ASTNode *right);
 ASTNode* create_if_node(ASTNode *condition, ASTNode *then_stmt, ASTNode *else_stmt);
-ASTNode* create_while_node(ASTNode *condition, ASTNode *body);
-ASTNode* create_for_node(ASTNode *init, ASTNode *condition, ASTNode *increment, ASTNode *body);
+ASTNode* create_while_node(ASTNode *condition, ASTNode *body, uint64_t loop_hash);
+ASTNode* create_for_node(ASTNode *init, ASTNode *condition, ASTNode *increment, ASTNode *body, uint64_t loop_hash);
 ASTNode* create_compound_node(ASTNode *statements);
 ASTNode* create_return_node(ASTNode *value);
 ASTNode* create_control_node(int is_break);
@@ -216,6 +219,7 @@ ASTNode* create_function_call_node(char *name, ASTNode *arguments);
 ASTNode* create_parameter_list_node(ASTNode *parameters);
 
 void add_statement(ASTNode *program, ASTNode *statement);
+ASTNode *add_args(ASTNode *list, ASTNode *expr);
 void free_ast(ASTNode *node);
 void print_ast(ASTNode *node, int depth);
 

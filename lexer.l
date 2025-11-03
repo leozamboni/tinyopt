@@ -3,6 +3,18 @@
 #include "ast.h"
 #include <string.h>
 #include <stdlib.h>
+#include <stdint.h>
+
+uint64_t fnv1a_with_salt(const char *s) {
+    uint64_t hash = 14695981039346656037ULL;
+    unsigned long salt = (unsigned long)rand(); 
+    hash ^= salt;
+    while (*s) {
+        hash ^= (unsigned char)(*s++);
+        hash *= 1099511628211ULL;
+    }
+    return hash;
+}
 %}
 
 digit       [0-9]
@@ -21,8 +33,8 @@ string_literal \"[^\"]*\"
 "return"        { return RETURN; }
 "if"            { return IF; }
 "else"          { return ELSE; }
-"while"         { return WHILE; }
-"for"           { return FOR; }
+"while"         { yylval.hash = fnv1a_with_salt(yytext); return WHILE; }
+"for"           { yylval.hash = fnv1a_with_salt(yytext); return FOR; }
 "break"         { return BREAK; }
 "continue"      { return CONTINUE; }
 

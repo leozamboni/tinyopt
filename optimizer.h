@@ -19,9 +19,6 @@ typedef struct {
     char *name;
     char *scope;
     char *string_value;
-    int is_used;
-    int is_defined;
-    int is_dead;
     VariableValue *value;
 } VariableInfo;
 
@@ -33,22 +30,20 @@ typedef struct {
 
 typedef struct DSETable {
     char *name;
-    int block_level;
+    uint64_t loop_hash;
     struct DSETable *next;
     ASTNode *node;
 } DSETable;
 
 void optimize_code(ASTNode *ast);
 
-void mark_dead_code(ASTNode *node);
 void remove_dead_code(ASTNode *node);
-void analyze_variable_usage(ASTNode *node, VariableTable *table, char *current_scope);
+void set_var_table(ASTNode *node, VariableTable *table, char *current_scope);
 
-void optimize_unused_variables(ASTNode *node, VariableTable *table, char *current_scope);
-void optimize_constant_folding(ASTNode *node);
-void optimize_unreachable_code(ASTNode *node, VariableTable *table, char *current_scope);
-void dead_store_elimination(ASTNode *node, DSETable **table, int block_level);
-void optimize_empty_blocks(ASTNode *node);
+void constant_folding(ASTNode *node);
+void reachability_analysis(ASTNode *node, VariableTable *table, char *current_scope);
+void liveness_and_dead_store_elimination(ASTNode *node, DSETable **table, uint64_t loop_hash);
+void empty_blocks(ASTNode *node);
 
 int is_condition_always_true(ASTNode *condition, VariableTable *table, char *current_scope);
 int is_condition_always_false(ASTNode *condition, VariableTable *table, char *current_scope);

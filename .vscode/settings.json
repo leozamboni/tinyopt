@@ -4,6 +4,8 @@
         "chrono": "c",
         "text_encoding": "c",
         "typeinfo": "c",
-        "any": "c"
+        "any": "c",
+        "ast.h": "c",
+        "stdio.h": "c"
     }
 }
