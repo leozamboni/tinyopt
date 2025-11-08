@@ -23,5 +23,5 @@ main (void)
       t2 = nextTerm;
     }
 
-  return 0;
+  return nextTerm;
 }

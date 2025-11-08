@@ -20,8 +20,6 @@ int main() {
     if (a == 1) {
         a = 10;
     }
-    if (is_prime(n))
-        return 1;
-    return 0;
+    return is_prime(n);
     a = 5;
 }
