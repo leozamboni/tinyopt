@@ -56,6 +56,7 @@ $endif$
 <li><a href="/">Home</a></li>
 <li><a href="/faq.html">Documentação</a></li>
 <li><a href="/faq.html">Guia de início rápido</a></li>
+<li><a href="/ebnf.html">EBNF</a></li>
 <li><a href="/download.html">GitHub</a></li>
 <li><a href="/tasks/">TODO</a></li>
 <li><strong><a href="/contact.html">Contato</a></strong></li>
