@@ -8,10 +8,15 @@ int factorial(int n)
     {
         return n * factorial(n - 1);
     }
+    if (n) {
+        n = n;
+    }
 }
 
 int main()
 {
-    int n = 10;
+    int n = 1;
+    int m = 2;
+    n = 10;
     return factorial(n);
 }

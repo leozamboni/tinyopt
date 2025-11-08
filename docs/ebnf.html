@@ -15,7 +15,7 @@
 <h1 class="title">Extended Backus–Naur form</h1>
 </div>
 <ul>
-<li><a href="/">Home</a></li>
+<li><a href="/tiny-opt">Home</a></li>
 <li><a href="/tiny-opt/faq.html">Documentação</a></li>
 <li><a href="/tiny-opt/faq.html">Guia de início rápido</a></li>
 <li><a href="/tiny-opt/ebnf.html">EBNF</a></li>
@@ -25,48 +25,112 @@
 </ul>
 <hr/>
 </header>
-<p>program ::= { statement } ;</p>
-<p>statement ::= declaration “;” – declaração de variável/função
-(assinatura) | assignment “;” – atribuição | function_call “;” – chamada
-de função | if_statement | while_statement | for_statement |
-compound_statement – bloco { … } | function_def – definição de função |
-“return” [ expression ] “;” – return opcionalmente com expressão |
-“break” “;” – break | “continue” “;” – continue ;</p>
-<p>declaration ::= “int” <identifier> [ “[” <number> ”]” ] | “float”
-<identifier> [ “[” <number> ”]” ] | “char” <identifier> [ “[” <number>
-”]” ] | “void” <identifier> [ “[” <number> ”]” ] ; – (declaração de
-parâmetro/variável simplificada conforme parser)</p>
-<p>assignment ::= <identifier> “=” expression | <identifier> “+=”
-expression | <identifier> “-=” expression | <identifier> “*=” expression
-| <identifier> “/=” expression | <identifier> “%=” expression |
-<identifier> “++” | <identifier> “–” | “++” <identifier> | “–”
-<identifier> ;</p>
-<p>if_statement ::= “if” “(” condition “)” statement | “if” “(”
-condition “)” statement “else” statement ;</p>
-<p>while_statement ::= “while” “(” condition “)” statement ;</p>
-<p>for_statement ::= “for” “(” [ declaration | assignment ] “;” [
-condition ] “;” [ assignment ] “)” statement ; – cobre as variações
-aceitas pelo parser (vazio/omissão de partes)</p>
-<p>compound_statement ::= “{” compound_program “}” ;</p>
-<p>compound_program ::= { statement } ;</p>
-<p>condition ::= expression – expressão simples como condição | “!”
-condition | “(” condition “)” | expression relop expression ;</p>
-<p>relop ::= “==” | “!=” | “&lt;” | “&gt;” | “&lt;=” | “&gt;=” |
-“&amp;&amp;” | “||” ;</p>
-<p>expression ::= additive_expression ;</p>
-<p>additive_expression ::= multiplicative_expression { ( “+” | “-” )
-multiplicative_expression } ;</p>
-<p>multiplicative_expression ::= unary_expression { ( “*” | “/” | “%” )
-unary_expression } ;</p>
-<p>unary_expression ::= [ ( “+” | “-” | “!” ) ] primary_expression ;</p>
-<p>primary_expression ::= <number> | <char_literal> | <string_literal> |
-<identifier> | <identifier> “[” expression ”]” | function_call | “(”
-expression “)” ;</p>
-<p>function_call ::= <identifier> “(” [ argument_list ] “)” ;</p>
-<p>argument_list ::= expression { “,” expression } ;</p>
-<p>function_def ::= (“int” | “float” | “char” | “void”) <identifier> “(”
-[ parameter_list ] “)” compound_statement ;</p>
-<p>parameter_list ::= declaration { “,” declaration } ;</p>
+<pre><code>program ::= { statement } ;
+
+statement ::=
+      declaration &quot;;&quot;                 -- declaração de variável/função (assinatura)
+    | assignment &quot;;&quot;                  -- atribuição
+    | function_call &quot;;&quot;               -- chamada de função
+    | if_statement
+    | while_statement
+    | for_statement
+    | compound_statement              -- bloco { ... }
+    | function_def                    -- definição de função
+    | &quot;return&quot; [ expression ] &quot;;&quot;     -- return opcionalmente com expressão
+    | &quot;break&quot; &quot;;&quot;                     -- break
+    | &quot;continue&quot; &quot;;&quot;                  -- continue
+    ;
+
+declaration ::=
+      &quot;int&quot; &lt;identifier&gt; [ &quot;[&quot; &lt;number&gt; &quot;]&quot; ]
+    | &quot;float&quot; &lt;identifier&gt; [ &quot;[&quot; &lt;number&gt; &quot;]&quot; ]
+    | &quot;char&quot; &lt;identifier&gt; [ &quot;[&quot; &lt;number&gt; &quot;]&quot; ]
+    | &quot;void&quot; &lt;identifier&gt; [ &quot;[&quot; &lt;number&gt; &quot;]&quot; ]
+    ;   -- (declaração de parâmetro/variável simplificada conforme parser)
+
+assignment ::=
+      &lt;identifier&gt; &quot;=&quot; expression
+    | &lt;identifier&gt; &quot;+=&quot; expression
+    | &lt;identifier&gt; &quot;-=&quot; expression
+    | &lt;identifier&gt; &quot;*=&quot; expression
+    | &lt;identifier&gt; &quot;/=&quot; expression
+    | &lt;identifier&gt; &quot;%=&quot; expression
+    | &lt;identifier&gt; &quot;++&quot;
+    | &lt;identifier&gt; &quot;--&quot;
+    | &quot;++&quot; &lt;identifier&gt;
+    | &quot;--&quot; &lt;identifier&gt;
+    ;
+
+if_statement ::=
+      &quot;if&quot; &quot;(&quot; condition &quot;)&quot; statement
+    | &quot;if&quot; &quot;(&quot; condition &quot;)&quot; statement &quot;else&quot; statement
+    ;
+
+while_statement ::=
+      &quot;while&quot; &quot;(&quot; condition &quot;)&quot; statement
+    ;
+
+for_statement ::=
+      &quot;for&quot; &quot;(&quot; [ declaration | assignment ] &quot;;&quot; [ condition ] &quot;;&quot; [ assignment ] &quot;)&quot; statement
+    ; -- cobre as variações aceitas pelo parser (vazio/omissão de partes)
+
+compound_statement ::=
+    &quot;{&quot; compound_program &quot;}&quot;
+    ;
+
+compound_program ::= { statement } ;
+
+condition ::=
+    expression         -- expressão simples como condição
+  | &quot;!&quot; condition
+  | &quot;(&quot; condition &quot;)&quot;
+  | expression relop expression
+  ;
+
+relop ::= &quot;==&quot; | &quot;!=&quot; | &quot;&lt;&quot; | &quot;&gt;&quot; | &quot;&lt;=&quot; | &quot;&gt;=&quot; | &quot;&amp;&amp;&quot; | &quot;||&quot; ;
+
+expression ::=
+    additive_expression
+    ;
+
+additive_expression ::=
+    multiplicative_expression { ( &quot;+&quot; | &quot;-&quot; ) multiplicative_expression }
+    ;
+
+multiplicative_expression ::=
+    unary_expression { ( &quot;*&quot; | &quot;/&quot; | &quot;%&quot; ) unary_expression }
+    ;
+
+unary_expression ::=
+      [ ( &quot;+&quot; | &quot;-&quot; | &quot;!&quot; ) ] primary_expression
+    ;
+
+primary_expression ::=
+      &lt;number&gt;
+    | &lt;char_literal&gt;
+    | &lt;string_literal&gt;
+    | &lt;identifier&gt;
+    | &lt;identifier&gt; &quot;[&quot; expression &quot;]&quot;
+    | function_call
+    | &quot;(&quot; expression &quot;)&quot;
+    ;
+
+function_call ::=
+      &lt;identifier&gt; &quot;(&quot; [ argument_list ] &quot;)&quot;
+    ;
+
+argument_list ::=
+      expression { &quot;,&quot; expression }
+    ;
+
+function_def ::=
+      (&quot;int&quot; | &quot;float&quot; | &quot;char&quot; | &quot;void&quot;) &lt;identifier&gt; &quot;(&quot; [ parameter_list ] &quot;)&quot; compound_statement
+    ;
+
+parameter_list ::=
+      declaration { &quot;,&quot; declaration }
+    ;
+</code></pre>
 <div id="footer">
 <hr />
 <hr />

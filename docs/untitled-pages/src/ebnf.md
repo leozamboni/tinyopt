@@ -3,6 +3,7 @@ title: Extended Backus–Naur form
 x-toc-enable: true
 ...
 
+```
 program ::= { statement } ;
 
 statement ::=
@@ -109,3 +110,4 @@ parameter_list ::=
       declaration { "," declaration }
     ;
 
+```

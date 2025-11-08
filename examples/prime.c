@@ -16,7 +16,12 @@ int is_prime(int n) {
 
 int main() {
     int n = 5;
+    int a = 10;
+    if (a == 1) {
+        a = 10;
+    }
     if (is_prime(n))
         return 1;
     return 0;
+    a = 5;
 }
