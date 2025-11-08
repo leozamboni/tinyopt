@@ -26,12 +26,11 @@ void optimize_code(ASTNode *ast)
     constant_folding(ast);
 
     set_var_table(ast, &head, &tail, 0, "global");
-    liveness_and_dead_store_elimination(head);
 
     reachability_analysis(ast, head, "global");
+    liveness_and_dead_store_elimination(head);
 
     empty_blocks(ast);
-
     liveness_and_dead_store_elimination(head);
 
     remove_dead_code(ast);
@@ -537,6 +536,9 @@ void reachability_analysis(ASTNode *node, DSETable *head, char *scope)
         }
         else if (cond == 0)
         {
+            if (if_node->condition) {
+                mark_subtree_dead(if_node->condition);
+            }
             if (if_node->then_statement)
             {
                 mark_subtree_dead(if_node->then_statement);
@@ -792,7 +794,29 @@ VariableValue *evaluate_expression_value(ASTNode *expr, DSETable *table, char *s
         BinaryOpNode *bin = (BinaryOpNode *)expr;
         VariableValue *left_val = evaluate_expression_value(bin->left, table, scope);
         VariableValue *right_val = evaluate_expression_value(bin->right, table, scope);
-        // printf("left_val: %d | right_val: %d\n", left_val->type,right_val->type);
+
+        // CASO: ... || 1
+        if (right_val && right_val->type == VALUE_TYPE_INT && bin->op == OP_OR && right_val->number > 0)
+        {
+            return right_val;
+        }
+        // CASO: 1 || ...
+        if (left_val && left_val->type == VALUE_TYPE_INT && bin->op == OP_OR && left_val->number > 0)
+        {
+            return left_val;
+        }
+
+        // CASO: ... && 0
+        if (right_val && right_val->type == VALUE_TYPE_INT && bin->op == OP_AND && right_val->number == 0)
+        {
+            return right_val;
+        }
+        // CASO: 0 && ...
+        if (left_val && left_val->type == VALUE_TYPE_INT && bin->op == OP_AND && left_val->number == 0)
+        {
+            return left_val;
+        }
+
         if (!left_val || !right_val)
             return NULL;
 
@@ -828,6 +852,12 @@ VariableValue *evaluate_expression_value(ASTNode *expr, DSETable *table, char *s
             break;
         case OP_EQ:
             result->number = (left_val->number == right_val->number);
+            break;
+        case OP_AND:
+            result->number = (left_val->number && right_val->number);
+            break;
+        case OP_OR:
+            result->number = (left_val->number || right_val->number);
             break;
         default:
             free(result);

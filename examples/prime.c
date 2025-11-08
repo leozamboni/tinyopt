@@ -21,6 +21,7 @@ int is_prime(int n)
     }
 
     return 1;
+    return 2;
 }
 
 int main()

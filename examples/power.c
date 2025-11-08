@@ -1,6 +1,7 @@
 int power(int base, int exp)
 {
     int result = 1;
+    int b = 0;
 
     while (exp > 0)
     {
