@@ -44,8 +44,8 @@ void reachability_analysis(ASTNode *node, VariableTable *table, char *current_sc
 void liveness_and_dead_store_elimination(ASTNode *node, DSETable **table, uint64_t loop_hash);
 void empty_blocks(ASTNode *node);
 
-int is_condition_always_true(ASTNode *condition, VariableTable *table, char *current_scope);
-int is_condition_always_false(ASTNode *condition, VariableTable *table, char *current_scope);
+int* is_condition_always_true(ASTNode *condition, VariableTable *table, char *current_scope);
+int* is_condition_always_false(ASTNode *condition, VariableTable *table, char *current_scope);
 int has_return_statement(ASTNode *node);
 int has_break_continue(ASTNode *node);
 

@@ -552,24 +552,36 @@ void reachability_analysis(ASTNode *node, VariableTable *table, char *current_sc
     {
         IfNode *if_node = (IfNode *)node;
 
-        if (is_condition_always_true(if_node->condition, table, current_scope))
+        int *cond_true = is_condition_always_true(if_node->condition, table, current_scope);
+        int *cond_false = NULL;
+
+        if (cond_true && *cond_true)
         {
             if (if_node->else_statement)
             {
                 mark_subtree_dead(if_node->else_statement);
             }
         }
-        else if (is_condition_always_false(if_node->condition, table, current_scope))
+        else
         {
-            if (if_node->then_statement)
+            cond_false = is_condition_always_false(if_node->condition, table, current_scope);
+            if (cond_false && *cond_false)
             {
-                mark_subtree_dead(if_node->then_statement);
-            }
-            if (!if_node->else_statement)
-            {
-                mark_subtree_dead(node);
+                if (if_node->then_statement)
+                {
+                    mark_subtree_dead(if_node->then_statement);
+                }
+                if (!if_node->else_statement)
+                {
+                    mark_subtree_dead(node);
+                }
             }
         }
+
+        if (cond_true)
+            free(cond_true);
+        if (cond_false)
+            free(cond_false);
 
         reachability_analysis(if_node->condition, table, current_scope);
         reachability_analysis(if_node->then_statement, table, current_scope);
@@ -580,7 +592,9 @@ void reachability_analysis(ASTNode *node, VariableTable *table, char *current_sc
     {
         WhileNode *while_node = (WhileNode *)node;
 
-        if (is_condition_always_false(while_node->condition, table, current_scope))
+        int *cond_false = is_condition_always_false(while_node->condition, table, current_scope);
+
+        if (cond_false && *cond_false)
         {
             if (while_node->body)
             {
@@ -588,6 +602,9 @@ void reachability_analysis(ASTNode *node, VariableTable *table, char *current_sc
             }
             node->is_dead_code = 1;
         }
+
+        if (cond_false)
+            free(cond_false);
 
         reachability_analysis(while_node->condition, table, current_scope);
         reachability_analysis(while_node->body, table, current_scope);
@@ -597,14 +614,23 @@ void reachability_analysis(ASTNode *node, VariableTable *table, char *current_sc
     {
         ForNode *for_node = (ForNode *)node;
 
-        if (for_node->condition && is_condition_always_false(for_node->condition, table, current_scope))
+        if (for_node->condition)
         {
-            if (for_node->body)
+            int *cond_false = is_condition_always_false(for_node->condition, table, current_scope);
+
+            if (cond_false && *cond_false)
             {
-                mark_subtree_dead(for_node->body);
+                if (for_node->body)
+                {
+                    mark_subtree_dead(for_node->body);
+                }
+                node->is_dead_code = 1;
             }
-            node->is_dead_code = 1;
+
+            if (cond_false)
+                free(cond_false);
         }
+
         reachability_analysis(for_node->init, table, current_scope);
         reachability_analysis(for_node->condition, table, current_scope);
         reachability_analysis(for_node->increment, table, current_scope);
@@ -937,39 +963,49 @@ void empty_blocks(ASTNode *node)
     empty_blocks(node->next);
 }
 
-int is_condition_always_true(ASTNode *condition, VariableTable *table, char *current_scope)
+int *is_condition_always_true(ASTNode *condition, VariableTable *table, char *current_scope)
 {
     if (condition == NULL)
-        return 0;
+        return NULL;
+
     switch (condition->type)
     {
     case NODE_NUMBER:
     {
         NumberNode *num = (NumberNode *)condition;
-        return strcmp(num->value, "0") != 0;
+        int *result = malloc(sizeof(int));
+        if (!result)
+            return NULL;
+        *result = strcmp(num->value, "0") != 0;
+        return result;
     }
+
     case NODE_CONDITION:
     {
         ConditionNode *c = (ConditionNode *)condition;
-
-        long a = 0, b = 0;
+        int *a = NULL, *b = NULL;
+        IdentifierNode *left_id = NULL, *right_id = NULL;
         if (c->left)
         {
-
             if (c->left->type == NODE_NUMBER)
             {
-                a = parse_number_value(((NumberNode *)c->left)->value);
+                int val = parse_number_value(((NumberNode *)c->left)->value);
+                a = malloc(sizeof(int));
+                if (a)
+                    *a = val;
             }
-            if (c->left->type == NODE_IDENTIFIER)
+            else if (c->left->type == NODE_IDENTIFIER)
             {
-                IdentifierNode *left_id = (IdentifierNode *)c->left;
+                left_id = (IdentifierNode *)c->left;
                 VariableInfo *left_var = find_variable(table, current_scope, left_id->name);
                 if (left_var && left_var->value && left_var->value->type == VALUE_TYPE_INT)
                 {
-                    a = left_var->value->number;
+                    a = malloc(sizeof(int));
+                    if (a)
+                        *a = left_var->value->number;
                 }
             }
-            if (c->left->type == NODE_CONDITION)
+            else if (c->left->type == NODE_CONDITION)
             {
                 a = is_condition_always_true(c->left, table, current_scope);
             }
@@ -979,73 +1015,123 @@ int is_condition_always_true(ASTNode *condition, VariableTable *table, char *cur
         {
             if (c->right->type == NODE_NUMBER)
             {
-                b = parse_number_value(((NumberNode *)c->right)->value);
+                int val = parse_number_value(((NumberNode *)c->right)->value);
+                b = malloc(sizeof(int));
+                if (b)
+                    *b = val;
             }
-            if (c->right->type == NODE_IDENTIFIER)
+            else if (c->right->type == NODE_IDENTIFIER)
             {
-                IdentifierNode *right_id = (IdentifierNode *)c->right;
+                right_id = (IdentifierNode *)c->right;
                 VariableInfo *right_var = find_variable(table, current_scope, right_id->name);
                 if (right_var && right_var->value && right_var->value->type == VALUE_TYPE_INT)
                 {
-                    b = right_var->value->number;
+                    b = malloc(sizeof(int));
+                    if (b)
+                        *b = right_var->value->number;
                 }
             }
-            if (c->right->type == NODE_CONDITION)
+            else if (c->right->type == NODE_CONDITION)
             {
                 b = is_condition_always_true(c->right, table, current_scope);
             }
         }
 
-        return eval_relational(c->op, a, b) != 0;
+        if (left_id && right_id && (strcmp(left_id->name, right_id->name) == 0))
+        {
+            int *result = malloc(sizeof(int));
+            if (!result)
+                return NULL;
+            *result = eval_relational(c->op, 1, 1) != 0;
+            return result;
+        }
+
+        if (a == NULL || b == NULL)
+        {
+            return NULL;
+        }
+
+        int *result = malloc(sizeof(int));
+        if (!result)
+        {
+            free(a);
+            free(b);
+            return NULL;
+        }
+        printf("a: %d | b: %d\n", *a, *b);
+        *result = eval_relational(c->op, *a, *b) == 0;
+
+        if (c->left && c->left->type == NODE_NUMBER)
+            free(a);
+        if (c->right && c->right->type == NODE_NUMBER)
+            free(b);
+        return result;
     }
+
     case NODE_UNARY_OP:
     {
         UnaryOpNode *u = (UnaryOpNode *)condition;
         if (u->op == OP_NOT && u->operand && u->operand->type == NODE_NUMBER)
         {
             long v = parse_number_value(((NumberNode *)u->operand)->value);
-            return (!v) != 0;
+            int *result = malloc(sizeof(int));
+            if (!result)
+                return NULL;
+            *result = (!v) != 0;
+            return result;
         }
-        return 0;
+        return NULL;
     }
+
     default:
-        return 0;
+        return NULL;
     }
 }
 
-int is_condition_always_false(ASTNode *condition, VariableTable *table, char *current_scope)
+int *is_condition_always_false(ASTNode *condition, VariableTable *table, char *current_scope)
 {
     if (condition == NULL)
-        return 0;
+        return NULL;
 
     switch (condition->type)
     {
     case NODE_NUMBER:
     {
         NumberNode *num = (NumberNode *)condition;
-        return strcmp(num->value, "0") == 0;
+        int *result = malloc(sizeof(int));
+        if (!result)
+            return NULL;
+        *result = strcmp(num->value, "0") == 0;
+        return result;
     }
+
     case NODE_CONDITION:
     {
         ConditionNode *c = (ConditionNode *)condition;
-        long a = 0, b = 0;
+        int *a = NULL, *b = NULL;
+        IdentifierNode *left_id = NULL, *right_id = NULL;
+
         if (c->left)
         {
-
             if (c->left->type == NODE_NUMBER)
             {
-                a = parse_number_value(((NumberNode *)c->left)->value);
+                int val = parse_number_value(((NumberNode *)c->left)->value);
+                a = malloc(sizeof(int));
+                if (a)
+                    *a = val;
             }
-            if (c->left->type == NODE_IDENTIFIER)
+            else if (c->left->type == NODE_IDENTIFIER)
             {
-                IdentifierNode *left_id = (IdentifierNode *)c->left;
+                left_id = (IdentifierNode *)c->left;
                 VariableInfo *left_var = find_variable(table, current_scope, left_id->name);
                 if (left_var && left_var->value && left_var->value->type == VALUE_TYPE_INT)
                 {
-                    a = left_var->value->number;
+                    a = malloc(sizeof(int));
+                    if (a)
+                        *a = left_var->value->number;
                 }
             }
-            if (c->left->type == NODE_CONDITION)
+            else if (c->left->type == NODE_CONDITION)
             {
                 a = is_condition_always_false(c->left, table, current_scope);
             }
@@ -1055,37 +1141,77 @@ int is_condition_always_false(ASTNode *condition, VariableTable *table, char *cu
         {
             if (c->right->type == NODE_NUMBER)
             {
-                b = parse_number_value(((NumberNode *)c->right)->value);
+                int val = parse_number_value(((NumberNode *)c->right)->value);
+                b = malloc(sizeof(int));
+                if (b)
+                    *b = val;
             }
-            if (c->right->type == NODE_IDENTIFIER)
+            else if (c->right->type == NODE_IDENTIFIER)
             {
-                IdentifierNode *right_id = (IdentifierNode *)c->right;
+                right_id = (IdentifierNode *)c->right;
                 VariableInfo *right_var = find_variable(table, current_scope, right_id->name);
                 if (right_var && right_var->value && right_var->value->type == VALUE_TYPE_INT)
                 {
-                    b = right_var->value->number;
+                    b = malloc(sizeof(int));
+                    if (b)
+                        *b = right_var->value->number;
                 }
             }
-            if (c->right->type == NODE_CONDITION)
+            else if (c->right->type == NODE_CONDITION)
             {
                 b = is_condition_always_false(c->right, table, current_scope);
             }
         }
 
-        return eval_relational(c->op, a, b) == 0;
+        if (left_id && right_id && (strcmp(left_id->name, right_id->name) == 0))
+        {
+            int *result = malloc(sizeof(int));
+            if (!result)
+                return NULL;
+            *result = eval_relational(c->op, 1, 1) != 0;
+            return result;
+        }
+
+        if (a == NULL || b == NULL)
+        {
+            return NULL;
+        }
+
+        int *result = malloc(sizeof(int));
+        if (!result)
+        {
+            free(a);
+            free(b);
+            return NULL;
+        }
+
+        *result = eval_relational(c->op, *a, *b) == 0;
+
+        if (c->left && c->left->type == NODE_NUMBER)
+            free(a);
+        if (c->right && c->right->type == NODE_NUMBER)
+            free(b);
+
+        return result;
     }
+
     case NODE_UNARY_OP:
     {
         UnaryOpNode *u = (UnaryOpNode *)condition;
         if (u->op == OP_NOT && u->operand && u->operand->type == NODE_NUMBER)
         {
             long v = parse_number_value(((NumberNode *)u->operand)->value);
-            return (!v) == 0;
+            int *result = malloc(sizeof(int));
+            if (!result)
+                return NULL;
+            *result = (!v) == 0;
+            return result;
         }
-        return 0;
+        return NULL;
     }
+
     default:
-        return 0;
+        return NULL;
     }
 }
 
