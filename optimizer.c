@@ -15,6 +15,7 @@ static long eval_relational(Operator op, long a, long b);
 static long eval_binary(Operator op, long a, long b);
 void print_dse_table(SymbolTable *head);
 SymbolValue *evaluate_expression_value(ASTNode *expr, SymbolTable *table, char *scope);
+void free_symbol_table(SymbolTable *table);
 
 void optimize_code(ASTNode *ast)
 {
@@ -34,7 +35,7 @@ void optimize_code(ASTNode *ast)
 
     // print_dse_table(head);
     // print_optimization_report(ast);
-    // free_variable_table(var_table);
+    free_symbol_table(head);
 }
 
 const char *get_node_type_str(NodeType type)
@@ -533,7 +534,8 @@ void reachability_analysis(ASTNode *node, SymbolTable *head, char *scope)
         }
         else if (cond == 0)
         {
-            if (if_node->condition) {
+            if (if_node->condition)
+            {
                 mark_subtree_dead(if_node->condition);
             }
             if (if_node->then_statement)
@@ -899,7 +901,7 @@ void set_symtab(ASTNode *node, SymbolTable **head, SymbolTable **tail, uint64_t 
             (*tail)->next = new_entry;
             *tail = new_entry;
 
-            if (decl->initial_value) 
+            if (decl->initial_value)
             {
                 SymbolValue *val = evaluate_expression_value(decl->initial_value, *head, scope);
                 if (val)
@@ -929,7 +931,7 @@ void set_symtab(ASTNode *node, SymbolTable **head, SymbolTable **tail, uint64_t 
             (*tail)->next = new_entry;
             *tail = new_entry;
 
-            if (assign->value) 
+            if (assign->value)
             {
                 SymbolValue *val = evaluate_expression_value(assign->value, *head, scope);
                 if (val)
@@ -1150,15 +1152,28 @@ int has_break_continue(ASTNode *node)
     return has_break_continue(node->next);
 }
 
-// void free_variable_table(VariableTable *table)
-// {
-//     for (int i = 0; i < table->count; i++)
-//     {
-//         free(table->variables[i].name);
-//     }
-//     free(table->variables);
-//     free(table);
-// }
+void free_symbol_table(SymbolTable *table)
+{
+    SymbolTable *current = table;
+    while (current)
+    {
+        SymbolTable *next = current->next;
+
+        if (current->value)
+        {
+            if (current->value->type == VALUE_TYPE_STRING && current->value->str)
+            {
+                free(current->value->str);
+                current->value->str = NULL;
+            }
+            free(current->value);
+            current->value = NULL;
+        }
+
+        free(current);
+        current = next;
+    }
+}
 
 void print_optimization_report(ASTNode *ast)
 {
