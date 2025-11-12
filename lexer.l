@@ -1,9 +1,9 @@
 %{
-#include "parser.tab.h"
-#include "ast.h"
 #include <string.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include "tinyopt_ast.h"
+#include "parser.tab.h"
 
 uint64_t fnv1a_with_salt(const char *s) {
     uint64_t hash = 14695981039346656037ULL;

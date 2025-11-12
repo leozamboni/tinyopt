@@ -1,15 +1,17 @@
 %{
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
-#include "ast.h"
+#include "tinyopt_ast.h"
 
 int yylex(void);
-void yyerror(const char *s);
+void yyerror(TinyOptASTNode_t *root, const char *s);
 
 // Variável global para a AST
-extern ASTNode *global_ast;
+// extern TinyOptASTNode_t *global_ast;
 
 // Função asprintf para compatibilidade
 int asprintf(char **strp, const char *fmt, ...) {
@@ -31,6 +33,8 @@ int asprintf(char **strp, const char *fmt, ...) {
 }
 
 %}
+
+%parse-param {TinyOptASTNode_t *root}
 
 %union {
     char* str;
@@ -71,7 +75,7 @@ int asprintf(char **strp, const char *fmt, ...) {
 program:
     program statement { 
         if ($2) {
-            add_statement(global_ast, $2);
+            add_statement(root, $2);
         }
     }
     | /* vazio */
@@ -231,7 +235,7 @@ for_statement:
 
 compound_statement:
     '{' compound_program '}' { 
-        ProgramNode *prog = (ProgramNode*)$2;
+        TinyOptProgramNode_t *prog = (TinyOptProgramNode_t*)$2;
         $$ = create_compound_node(prog->statements);
         // Set statements to NULL to avoid double-freeing
         prog->statements = NULL;
@@ -390,22 +394,22 @@ function_def:
 parameter_list:
     declaration {
         // Criar uma lista com um único parâmetro
-        ProgramNode *prog = (ProgramNode*)create_program_node();
-        add_statement((ASTNode*)prog, $1);
-        $$ = (ASTNode*)prog;
+        TinyOptProgramNode_t *prog = (TinyOptProgramNode_t*)create_program_node();
+        add_statement((TinyOptASTNode_t*)prog, $1);
+        $$ = (TinyOptASTNode_t*)prog;
     }
     | parameter_list ',' declaration {
         // Adicionar à lista existente
-        ASTNode *param_list = (ASTNode*)$1;
+        TinyOptASTNode_t *param_list = (TinyOptASTNode_t*)$1;
         if (param_list && param_list->type == NODE_PROGRAM) {
             add_statement(param_list, $3);
             $$ = param_list;
         } else {
             // Fallback: criar nova lista
-            ProgramNode *prog = (ProgramNode*)create_program_node();
-            if (param_list) add_statement((ASTNode*)prog, param_list);
-            add_statement((ASTNode*)prog, $3);
-            $$ = (ASTNode*)prog;
+            TinyOptProgramNode_t *prog = (TinyOptProgramNode_t*)create_program_node();
+            if (param_list) add_statement((TinyOptASTNode_t*)prog, param_list);
+            add_statement((TinyOptASTNode_t*)prog, $3);
+            $$ = (TinyOptASTNode_t*)prog;
         }
     }
     | VOID {
@@ -415,6 +419,8 @@ parameter_list:
 
 %%
 
-void yyerror(const char *s) {
-    fprintf(stderr, "Erro: %s\n", s);
+void yyerror(TinyOptASTNode_t *root, const char *s)
+{
+    (void)root; // se não usar
+    fprintf(stderr, "Erro de sintaxe: %s\n", s);
 }

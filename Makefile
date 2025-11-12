@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS = -std=c99 -D_GNU_SOURCE -Wall -Wextra
-SRC = parser.tab.c lex.yy.c main.c ast.c optimizer.c codegen.c cfg.c
+SRC = parser.tab.c lex.yy.c tinyopt.c tinyopt_ast.c tinyopt_stab.c tinyopt_core.c tinyopt_code.c tinyopt_cfg.c
 OUT = tinyopt
 
 all: parser lex $(OUT)

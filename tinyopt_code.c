@@ -1,19 +1,50 @@
+/*⠀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+ *⠀⣿⢫⣶⢾⣰⣿⣑⣶⣕⡫⢙⣭⣖⣷⣶⣹⣿⣻⣟⠉⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+ *⠀⣿⣮⡟⣼⣶⣶⠶⠶⠶⢶⣶⢶⠶⠶⠶⢶⣶⣶⡶⢰⢿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+ *⠀⣿⡼⠱⣫⣶⣾⠟⠿⣿⠨⣆⣿⢰⣿⠿⣿⢶⣬⠃⣷⣾⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+ *⠀⣿⢿⣾⢿⣷⣌⣀⣈⣿⠘⣧⢸⢸⡿⡟⢁⣋⡩⣷⣬⣾⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+ *⠀⣿⠹⣑⡲⣶⣦⡻⠿⣿⢠⣍⢴⢸⣿⣰⣿⡿⢃⣜⢗⣸⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+ *⠀⣿⢸⢿⡿⠋⠙⣿⠹⣿⢸⠏⠾⢸⣯⢣⣾⣟⣻⣭⡛⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣠⣤⣤⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+ *⠀⣿⣞⢾⣧⣻⣾⣋⣾⣾⠀⠸⢓⢸⡟⣆⢿⢼⣗⠉⡽⣸⡇⠀⠀⣠⡦⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⠂⠁⠀⠉⠙⢿⣷⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡀⠀⠀
+ *⠀⣿⢛⣥⣬⣛⡿⣦⢫⣿⢸⣇⣿⢸⡿⣳⣥⣜⣿⢿⡾⢿⡇⠀⠀⢈⡀⠀⠀⢀⡀⠀⢀⣀⠀⠀⠀⣀⡀⠀⠀⠀⢀⡀⠀⠀⣴⠃⠀⠀⠀⠀⠀⠀⢻⣿⠀⠀⣀⡀⠀⢀⣀⠀⠀⢀⣾⣇⣀⡀
+ *⠀⣿⣿⢋⣽⣶⣯⡈⢼⣿⠸⣦⢸⢸⡟⠿⢍⣿⣝⠸⣸⢿⡇⠀⠐⢿⡇⠀⠐⢿⡧⠐⠙⢻⣷⠀⠈⢻⣿⠀⠀⠀⢻⣷⠀⢸⣿⠀⠀⠀⠀⠀⠀⠀⠈⣿⠂⠘⣿⡧⠊⠙⢿⣷⠀⠉⣿⡏⠉⠀
+ *⠀⣿⡗⣼⣟⣉⢻⡹⢸⣿⢸⡌⣸⠘⡿⠿⣿⣟⣻⡇⣱⣿⡇⠀⠀⢸⡇⠀⠀⢸⡇⠀⠀⢸⣿⠀⠀⢸⣿⠀⠀⠀⢸⣿⠀⢸⣿⡀⠀⠀⠀⠀⠀⠀⢀⡿⠀⠀⣿⡇⠀⠀⠈⣿⠀⠀⣿⡇⠀⠀
+ *⠀⣿⣷⢩⣿⣵⡿⣣⡾⣣⣟⣁⣙⣧⡻⢇⡽⢟⣉⠪⢭⣿⡇⠀⠀⢸⡇⠀⠀⢸⡇⠀⠀⢸⣿⠀⠀⢸⣿⡀⠀⠀⣸⡇⠀⠈⢿⣷⣄⠀⠀⠀⠀⢀⡼⠁⠀⠀⣿⡇⠀⠀⢀⠟⠀⠀⣿⡇⠀⠀
+ *⠀⠿⠶⠾⠿⠶⠿⠿⠶⠶⠶⠶⠶⠶⠶⠾⠿⠿⠿⠿⠾⠿⠇⠀⠀⠸⠿⠂⠀⠸⠿⠂⠀⠘⠿⠓⠀⠈⠻⡿⠒⠁⢸⣷⠀⠀⠀⠙⠻⠿⠶⠶⠖⠉⠀⠀⠀⠀⣿⡿⠿⠖⠀⠀⠀⠀⠻⠿⠖⠀
+ *⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⡎⠀⠀⠀⢸⠏⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+ *⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⠻⠿⠶⠂⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠛⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+ *  TinyOpt
+ *  Copyright (c) 2025 leozamboni 
+ *
+ *  this program is free software: you can redistribute it and/or modify
+ *  it under the terms of the gnu general public license as published by
+ *  the free software foundation, either version 3 of the license, or
+ *  (at your option) any later version.
+ *
+ *  this program is distributed in the hope that it will be useful,
+ *  but without any warranty; without even the implied warranty of
+ *  merchantability or fitness for a particular purpose.  see the
+ *  gnu general public license for more details.
+ *
+ *  you should have received a copy of the gnu general public license
+ *  along with this program.  if not, see <http://www.gnu.org/licenses/>.
+ */
 #include <stdio.h>
-#include "codegen.h"
+#include "tinyopt_code.h"
 
-static void emit_stmt_list (ASTNode * node);
-static void emit_stmt (ASTNode * node);
-static void emit_expr (ASTNode * node);
+static void emit_stmt_list (TinyOptASTNode_t * node);
+static void emit_stmt (TinyOptASTNode_t * node);
+static void emit_expr (TinyOptASTNode_t * node);
 static const char *dtype_to_str (DataType t);
 static const char *op_to_assign_str (Operator op);
 static const char *relop_to_str (Operator op);
 static void emit_indent (int n);
-static void emit_block (ASTNode * node, int indent);
-static void emit_parameter_list (ASTNode * node);
-static void emit_argument_list (ASTNode * node);
+static void emit_block (TinyOptASTNode_t * node, int indent);
+static void emit_parameter_list (TinyOptASTNode_t * node);
+static void emit_argument_list (TinyOptASTNode_t * node);
 
 void
-print_optimized_code (ASTNode *ast)
+print_optimized_code (TinyOptASTNode_t *ast)
 {
   if (!ast)
     {
@@ -22,7 +53,7 @@ print_optimized_code (ASTNode *ast)
     }
   if (ast->type == NODE_PROGRAM)
     {
-      ProgramNode *p = (ProgramNode *) ast;
+      TinyOptProgramNode_t *p = (TinyOptProgramNode_t *) ast;
       emit_stmt_list (p->statements);
     }
   else
@@ -32,9 +63,9 @@ print_optimized_code (ASTNode *ast)
 }
 
 static void
-emit_stmt_list (ASTNode *node)
+emit_stmt_list (TinyOptASTNode_t *node)
 {
-  for (ASTNode * cur = node; cur; cur = cur->next)
+  for (TinyOptASTNode_t * cur = node; cur; cur = cur->next)
     {
       emit_stmt (cur);
     }
@@ -114,10 +145,10 @@ emit_indent (int n)
 }
 
 static void
-emit_block (ASTNode *node, int indent)
+emit_block (TinyOptASTNode_t *node, int indent)
 {
   printf ("{\n");
-  for (ASTNode * cur = node; cur; cur = cur->next)
+  for (TinyOptASTNode_t * cur = node; cur; cur = cur->next)
     {
       emit_indent (indent);
       emit_stmt (cur);
@@ -127,7 +158,7 @@ emit_block (ASTNode *node, int indent)
 }
 
 static void
-emit_stmt (ASTNode *node)
+emit_stmt (TinyOptASTNode_t *node)
 {
   if (!node)
     return;
@@ -135,7 +166,7 @@ emit_stmt (ASTNode *node)
     {
     case NODE_DECLARATION:
       {
-	DeclarationNode *d = (DeclarationNode *) node;
+	TinyOptDeclarationNode_t *d = (TinyOptDeclarationNode_t *) node;
 	printf ("%s %s", dtype_to_str (d->data_type), d->name);
 	if (d->array_size > 0)
 	  printf ("[%d]", d->array_size);
@@ -149,7 +180,7 @@ emit_stmt (ASTNode *node)
       }
     case NODE_ASSIGNMENT:
       {
-	AssignmentNode *a = (AssignmentNode *) node;
+	TinyOptAssignmentNode_t *a = (TinyOptAssignmentNode_t *) node;
 	const char *as = op_to_assign_str (a->op);
 	if (as)
 	  {
@@ -174,14 +205,14 @@ emit_stmt (ASTNode *node)
       }
     case NODE_IF_STATEMENT:
       {
-	IfNode *i = (IfNode *) node;
+	TinyOptIfNode_t *i = (TinyOptIfNode_t *) node;
 
 	if (!i->condition && i->then_statement && !i->else_statement)
 	  {
 	    if (i->then_statement->type == NODE_COMPOUND_STATEMENT)
-	      {
-		emit_stmt_list (((CompoundNode *) i->
-				 then_statement)->statements);
+	      { 
+		emit_stmt_list (((TinyOptCompoundNode_t *) i->then_statement)->
+				statements);
 	      }
 	    else
 	      {
@@ -193,8 +224,8 @@ emit_stmt (ASTNode *node)
 	  {
 	    if (i->else_statement->type == NODE_COMPOUND_STATEMENT)
 	      {
-		emit_stmt_list (((CompoundNode *) i->
-				 else_statement)->statements);
+		emit_stmt_list (((TinyOptCompoundNode_t *) i->else_statement)->
+				statements);
 	      }
 	    else
 	      {
@@ -209,7 +240,7 @@ emit_stmt (ASTNode *node)
 	    printf ("if (");
 	    emit_expr (i->condition);
 	    printf (") ");
-	    emit_block (((CompoundNode *) i->then_statement)->statements, 1);
+	    emit_block (((TinyOptCompoundNode_t *) i->then_statement)->statements, 1);
 	  }
 	if (i->else_statement)
 	  {
@@ -219,7 +250,7 @@ emit_stmt (ASTNode *node)
 	      }
 	    if (i->else_statement->type == NODE_COMPOUND_STATEMENT)
 	      {
-		emit_block (((CompoundNode *) i->else_statement)->statements,
+		emit_block (((TinyOptCompoundNode_t *) i->else_statement)->statements,
 			    1);
 	      }
 	    else
@@ -233,13 +264,13 @@ emit_stmt (ASTNode *node)
       }
     case NODE_WHILE_STATEMENT:
       {
-	WhileNode *w = (WhileNode *) node;
+	TinyOptWhileNode_t *w = (TinyOptWhileNode_t *) node;
 	printf ("while (");
 	emit_expr (w->condition);
 	printf (") ");
 	if (w->body && w->body->type == NODE_COMPOUND_STATEMENT)
 	  {
-	    emit_block (((CompoundNode *) w->body)->statements, 1);
+	    emit_block (((TinyOptCompoundNode_t *) w->body)->statements, 1);
 	  }
 	else
 	  {
@@ -251,18 +282,18 @@ emit_stmt (ASTNode *node)
       }
     case NODE_FOR_STATEMENT:
       {
-	ForNode *f = (ForNode *) node;
+	TinyOptForNode_t *f = (TinyOptForNode_t *) node;
 	printf ("for (");
 	if (f->init && f->init->type == NODE_ASSIGNMENT)
 	  {
-	    AssignmentNode *a = (AssignmentNode *) f->init;
+	    TinyOptAssignmentNode_t *a = (TinyOptAssignmentNode_t *) f->init;
 	    printf ("%s %s ", a->variable, op_to_assign_str (a->op));
 	    if (a->value)
 	      emit_expr (a->value);
 	  }
 	else if (f->init && f->init->type == NODE_DECLARATION)
 	  {
-	    DeclarationNode *d = (DeclarationNode *) f->init;
+	    TinyOptDeclarationNode_t *d = (TinyOptDeclarationNode_t *) f->init;
 	    printf ("%s %s", dtype_to_str (d->data_type), d->name);
 	    if (d->initial_value)
 	      {
@@ -276,7 +307,7 @@ emit_stmt (ASTNode *node)
 	printf ("; ");
 	if (f->increment && f->increment->type == NODE_ASSIGNMENT)
 	  {
-	    AssignmentNode *a = (AssignmentNode *) f->increment;
+	    TinyOptAssignmentNode_t *a = (TinyOptAssignmentNode_t *) f->increment;
 	    const char *as = op_to_assign_str (a->op);
 	    if (as)
 	      {
@@ -296,7 +327,7 @@ emit_stmt (ASTNode *node)
 	printf (") ");
 	if (f->body && f->body->type == NODE_COMPOUND_STATEMENT)
 	  {
-	    emit_block (((CompoundNode *) f->body)->statements, 1);
+	    emit_block (((TinyOptCompoundNode_t *) f->body)->statements, 1);
 	  }
 	else
 	  {
@@ -308,13 +339,13 @@ emit_stmt (ASTNode *node)
       }
     case NODE_COMPOUND_STATEMENT:
       {
-	CompoundNode *c = (CompoundNode *) node;
+	TinyOptCompoundNode_t *c = (TinyOptCompoundNode_t *) node;
 	emit_block (c->statements, 1);
 	break;
       }
     case NODE_RETURN:
       {
-	ReturnNode *r = (ReturnNode *) node;
+	TinyOptReturnNode_t *r = (TinyOptReturnNode_t *) node;
 	printf ("return ");
 	emit_expr (r->value);
 	printf (";\n");
@@ -332,7 +363,7 @@ emit_stmt (ASTNode *node)
       }
     case NODE_FUNCTION_DEF:
       {
-	FunctionDefNode *f = (FunctionDefNode *) node;
+	TinyOptFunctionDefNode_t *f = (TinyOptFunctionDefNode_t *) node;
 	printf ("%s %s(", dtype_to_str (f->return_type), f->name);
 	if (f->parameters)
 	  {
@@ -341,7 +372,7 @@ emit_stmt (ASTNode *node)
 	printf (") ");
 	if (f->body && f->body->type == NODE_COMPOUND_STATEMENT)
 	  {
-	    emit_block (((CompoundNode *) f->body)->statements, 0);
+	    emit_block (((TinyOptCompoundNode_t *) f->body)->statements, 0);
 	  }
 	else
 	  {
@@ -357,26 +388,26 @@ emit_stmt (ASTNode *node)
 }
 
 static void
-emit_parameter_list (ASTNode *node)
+emit_parameter_list (TinyOptASTNode_t *node)
 {
   if (!node)
     return;
   // Parâmetros são armazenados como uma lista de declarações
-  ASTNode *cur = node;
+  TinyOptASTNode_t *cur = node;
   int first = 1;
   while (cur && cur->type == NODE_DECLARATION)
     {
       if (!first)
 	printf (", ");
       first = 0;
-      DeclarationNode *d = (DeclarationNode *) cur;
+      TinyOptDeclarationNode_t *d = (TinyOptDeclarationNode_t *) cur;
       printf ("%s %s", dtype_to_str (d->data_type), d->name);
       cur = cur->next;
     }
   // Se for um ProgramNode, iterar sobre statements
   if (node->type == NODE_PROGRAM)
     {
-      ProgramNode *prog = (ProgramNode *) node;
+      TinyOptProgramNode_t *prog = (TinyOptProgramNode_t *) node;
       cur = prog->statements;
       while (cur)
 	{
@@ -385,7 +416,7 @@ emit_parameter_list (ASTNode *node)
 	  first = 0;
 	  if (cur->type == NODE_DECLARATION)
 	    {
-	      DeclarationNode *d = (DeclarationNode *) cur;
+	      TinyOptDeclarationNode_t *d = (TinyOptDeclarationNode_t *) cur;
 	      printf ("%s %s", dtype_to_str (d->data_type), d->name);
 	    }
 	  cur = cur->next;
@@ -394,17 +425,17 @@ emit_parameter_list (ASTNode *node)
 }
 
 static void
-emit_argument_list (ASTNode *node)
+emit_argument_list (TinyOptASTNode_t *node)
 {
   if (!node)
     return;
   // Argumentos são armazenados como uma lista de expressões
-  ASTNode *cur = node;
+  TinyOptASTNode_t *cur = node;
   int first = 1;
   // Se for um ProgramNode, iterar sobre statements
   if (node->type == NODE_PROGRAM)
     {
-      ProgramNode *prog = (ProgramNode *) node;
+      TinyOptProgramNode_t *prog = (TinyOptProgramNode_t *) node;
       cur = prog->statements;
       while (cur)
 	{
@@ -430,7 +461,7 @@ emit_argument_list (ASTNode *node)
 }
 
 static void
-emit_expr (ASTNode *node)
+emit_expr (TinyOptASTNode_t *node)
 {
   if (!node)
     {
@@ -440,14 +471,14 @@ emit_expr (ASTNode *node)
   switch (node->type)
     {
     case NODE_NUMBER:
-      printf ("%s", ((NumberNode *) node)->value);
+      printf ("%s", ((TinyOptNumberNode_t *) node)->value);
       break;
     case NODE_IDENTIFIER:
-      printf ("%s", ((IdentifierNode *) node)->name);
+      printf ("%s", ((TinyOptIdentifierNode_t *) node)->name);
       break;
     case NODE_BINARY_OP:
       {
-	BinaryOpNode *b = (BinaryOpNode *) node;
+	TinyOptBinaryOpNode_t *b = (TinyOptBinaryOpNode_t *) node;
 	printf ("(");
 	emit_expr (b->left);
 	const char *op = "?";
@@ -478,7 +509,7 @@ emit_expr (ASTNode *node)
       }
     case NODE_CONDITION:
       {
-	ConditionNode *c = (ConditionNode *) node;
+	TinyOptConditionNode_t *c = (TinyOptConditionNode_t *) node;
 	printf ("(");
 	emit_expr (c->left);
 	printf (" %s ", relop_to_str (c->op));
@@ -488,7 +519,7 @@ emit_expr (ASTNode *node)
       }
     case NODE_UNARY_OP:
       {
-	UnaryOpNode *u = (UnaryOpNode *) node;
+	TinyOptUnaryOpNode_t *u = (TinyOptUnaryOpNode_t *) node;
 	if (u->op == OP_NOT)
 	  {
 	    printf ("!");
@@ -502,7 +533,7 @@ emit_expr (ASTNode *node)
       }
     case NODE_FUNCTION_CALL:
       {
-	FunctionCallNode *call = (FunctionCallNode *) node;
+	TinyOptFunctionCallNode_t *call = (TinyOptFunctionCallNode_t *) node;
 	printf ("%s(", call->name);
 	if (call->arguments)
 	  {

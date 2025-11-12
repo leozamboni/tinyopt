@@ -18,6 +18,12 @@
         "tuple": "c",
         "type_traits": "c",
         "utility": "c",
-        "cstdlib": "c"
+        "cstdlib": "c",
+        "variant": "c",
+        "tinyopt_core.h": "c",
+        "tinyopt_ast.h": "c",
+        "tinyopt_stab.h": "c",
+        "list": "c",
+        "inttypes.h": "c"
     }
 }
