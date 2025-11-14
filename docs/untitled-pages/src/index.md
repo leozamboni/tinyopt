@@ -1,5 +1,5 @@
 ---
-title: <img src="./logo.png" alt="" srcset="">
+title: "<img src='./logo.png' alt='' srcset='' style='height: 100px'>"
 x-toc-enable: true
 ...
 
