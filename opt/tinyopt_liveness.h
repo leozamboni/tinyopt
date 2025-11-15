@@ -33,6 +33,7 @@
 #define TINYOPT_LIVENESS
 
 #include "tinyopt.h"
+#include <inttypes.h>
 
 void tinyopt_liveness (TinyOptStab_t *table);
 

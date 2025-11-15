@@ -33,6 +33,7 @@
 
 int liveness_exp (TinyOptASTNode_t *check, char *name);
 int liveness_var_stmt (Symbol *check, char *name);
+int liveness_seek_usage (SymbolBucket *check_bucket, char *name);
 
 void
 tinyopt_liveness (TinyOptStab_t *table)
@@ -72,17 +73,12 @@ tinyopt_liveness (TinyOptStab_t *table)
                   for (size_t j = 0; j < table->size && !used; j++)
                     {
                       SymbolBucket *check_bucket = table->buckets[j];
-                      while (check_bucket)
+                      int usage
+                          = liveness_seek_usage (check_bucket, entry->name);
+                      if (usage)
                         {
-                          Symbol *check = check_bucket->symbol;
-                          int stmt = liveness_var_stmt (check, entry->name);
-                          if (stmt)
-                            {
-                              used = 1;
-                              break;
-                            }
-
-                          check_bucket = check_bucket->next;
+                          used = 1;
+                          break;
                         }
                     }
                 }
@@ -110,18 +106,10 @@ tinyopt_liveness (TinyOptStab_t *table)
                          atual do laço externo.
                       */
                       SymbolBucket *tmp = bucket->next;
-                      while (tmp)
+                      int usage = liveness_seek_usage (tmp, entry->name);
+                      if (usage)
                         {
-                          Symbol *check = tmp->symbol;
-
-                          int stmt = liveness_var_stmt (check, entry->name);
-                          if (stmt)
-                            {
-                              used = 1;
-                              break;
-                            }
-
-                          tmp = tmp->next;
+                          used = 1;
                         }
                     }
                   else /* node->type == NODE_ASSIGNMENT && entry->loop_hash !=
@@ -174,6 +162,38 @@ tinyopt_liveness (TinyOptStab_t *table)
           bucket = bucket->next;
         }
     }
+}
+
+int
+liveness_seek_usage (SymbolBucket *check_bucket, char *name)
+{
+  if (!check_bucket)
+    return 0;
+
+  Symbol *check = check_bucket->symbol;
+  if (liveness_var_stmt (check, name))
+    {
+      if (check->node->type == NODE_IDENTIFIER)
+        {
+          return 1;
+        }
+      else
+        {
+          if (check->loop_hash)
+            {
+              /* Atribuicoes ou declaracoes dentro de loops são verificadas
+               * posteriormente, de forma distinta, para evitar loops infinitos
+               */
+              return 1;
+            }
+          else
+            {
+              return liveness_seek_usage (check_bucket->next, check->name);
+            }
+        }
+    }
+
+  return liveness_seek_usage (check_bucket->next, name);
 }
 
 int
