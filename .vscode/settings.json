@@ -24,6 +24,11 @@
         "tinyopt_ast.h": "c",
         "tinyopt_stab.h": "c",
         "list": "c",
-        "inttypes.h": "c"
+        "inttypes.h": "c",
+        "tinyopt_dse.h": "c",
+        "tinyopt_liveness.h": "c",
+        "tinyopt.h": "c",
+        "tinyopt_dead_store.h": "c",
+        "tinyopt_empty_blocks.h": "c"
     }
 }

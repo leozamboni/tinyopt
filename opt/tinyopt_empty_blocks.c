@@ -14,7 +14,7 @@
  *⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⡎⠀⠀⠀⢸⠏⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
  *⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⠻⠿⠶⠂⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠛⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
  *  TinyOpt
- *  Copyright (c) 2025 leozamboni 
+ *  Copyright (c) 2025 leozamboni
  *
  *  this program is free software: you can redistribute it and/or modify
  *  it under the terms of the gnu general public license as published by
@@ -29,22 +29,82 @@
  *  you should have received a copy of the gnu general public license
  *  along with this program.  if not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef TINYOPT_CORE
-#define TINYOPT_CORE
+#include "tinyopt_empty_blocks.h"
 
-#include "tinyopt.h"
-#include "tinyopt_stab.h"
-#include "opt/tinyopt_dead_store.h"
-#include "opt/tinyopt_empty_blocks.h"
-#include "opt/tinyopt_folding.h"
-#include "opt/tinyopt_liveness.h"
-#include "opt/tinyopt_reachability.h"
+int all_statements_dead (TinyOptASTNode_t *stmt_list);
 
 void
-optimize (TinyOpt_t **tinyopt);
+tinyopt_empty_blocks (TinyOptASTNode_t *node)
+{
+  if (node == NULL)
+    return;
 
-void remove_dead_code (TinyOptASTNode_t *node);
-void set_symtab (TinyOptASTNode_t *node, TinyOptStab_t *stab, uint64_t loop_hash,
-                 const char *scope);
+  switch (node->type)
+    {
+    case NODE_PROGRAM:
+      {
+        TinyOptProgramNode_t *prog = (TinyOptProgramNode_t *)node;
+        tinyopt_empty_blocks (prog->statements);
+        break;
+      }
+    case NODE_COMPOUND_STATEMENT:
+      {
+        TinyOptCompoundNode_t *comp = (TinyOptCompoundNode_t *)node;
+        if (comp->statements == NULL)
+          {
+            node->is_dead_code = 1;
+          }
+        else
+          {
+            tinyopt_empty_blocks (comp->statements);
+            if (all_statements_dead (comp->statements))
+              node->is_dead_code = 1;
+          }
+        break;
+      }
+    case NODE_IF_STATEMENT:
+      {
+        TinyOptIfNode_t *i = (TinyOptIfNode_t *)node;
+        tinyopt_empty_blocks (i->then_statement);
+        tinyopt_empty_blocks (i->else_statement);
+        break;
+      }
+    case NODE_WHILE_STATEMENT:
+      {
+        TinyOptWhileNode_t *w = (TinyOptWhileNode_t *)node;
+        tinyopt_empty_blocks (w->body);
+        break;
+      }
+    case NODE_FOR_STATEMENT:
+      {
+        TinyOptForNode_t *f = (TinyOptForNode_t *)node;
+        tinyopt_empty_blocks (f->body);
+        break;
+      }
+    case NODE_FUNCTION_DEF:
+      {
+        TinyOptFunctionDefNode_t *func = (TinyOptFunctionDefNode_t *)node;
+        tinyopt_empty_blocks (func->body);
+        break;
+      }
+    default:
+      break;
+    }
 
-#endif
+  tinyopt_empty_blocks (node->next);
+}
+
+int
+all_statements_dead (TinyOptASTNode_t *stmt_list)
+{
+  TinyOptASTNode_t *current = stmt_list;
+
+  while (current)
+    {
+      if (!current->is_dead_code)
+        return 0; // encontrou um statement vivo
+      current = current->next;
+    }
+
+  return 1; // se não encontrou nenhum, considera vazio (morto também)
+}

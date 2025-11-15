@@ -14,7 +14,7 @@
  *⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⡎⠀⠀⠀⢸⠏⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
  *⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⠻⠿⠶⠂⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠛⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
  *  TinyOpt
- *  Copyright (c) 2025 leozamboni 
+ *  Copyright (c) 2025 leozamboni
  *
  *  this program is free software: you can redistribute it and/or modify
  *  it under the terms of the gnu general public license as published by
@@ -29,22 +29,11 @@
  *  you should have received a copy of the gnu general public license
  *  along with this program.  if not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef TINYOPT_CORE
-#define TINYOPT_CORE
+#ifndef TINYOPT_FOLDING
+#define TINYOPT_FOLDING
 
 #include "tinyopt.h"
-#include "tinyopt_stab.h"
-#include "opt/tinyopt_dead_store.h"
-#include "opt/tinyopt_empty_blocks.h"
-#include "opt/tinyopt_folding.h"
-#include "opt/tinyopt_liveness.h"
-#include "opt/tinyopt_reachability.h"
 
-void
-optimize (TinyOpt_t **tinyopt);
-
-void remove_dead_code (TinyOptASTNode_t *node);
-void set_symtab (TinyOptASTNode_t *node, TinyOptStab_t *stab, uint64_t loop_hash,
-                 const char *scope);
+void tinyopt_constant_folding (TinyOptASTNode_t *node);
 
 #endif
