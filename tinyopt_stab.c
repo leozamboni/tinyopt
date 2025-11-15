@@ -14,7 +14,7 @@
  *⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⡎⠀⠀⠀⢸⠏⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
  *⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⠻⠿⠶⠂⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠛⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
  *  TinyOpt
- *  Copyright (c) 2025 leozamboni 
+ *  Copyright (c) 2025 leozamboni
  *
  *  this program is free software: you can redistribute it and/or modify
  *  it under the terms of the gnu general public license as published by
@@ -32,8 +32,8 @@
 #include "tinyopt_stab.h"
 
 void
-tinyopt_stab_init (TinyOptASTNode_t *node, TinyOptStab_t *stab, uint64_t loop_hash,
-            const char *scope)
+tinyopt_stab_init (TinyOptASTNode_t *node, TinyOptStab_t *stab,
+                   uint64_t loop_hash, const char *scope)
 {
   if (!node || !stab)
     return;
@@ -61,6 +61,18 @@ tinyopt_stab_init (TinyOptASTNode_t *node, TinyOptStab_t *stab, uint64_t loop_ha
             sym->id_hash = decl->hash;
             sym->loop_hash = loop_hash;
             sym->value = NULL;
+
+            if (decl->initial_value
+                && decl->initial_value->type == NODE_FUNCTION_CALL)
+              {
+                TinyOptFunctionCallNode_t *fcall
+                    = (TinyOptFunctionCallNode_t *)decl->initial_value;
+                if (fcall->arguments)
+                  {
+                    tinyopt_stab_init (fcall->arguments, stab, loop_hash,
+                                       scope);
+                  }
+              }
 
             if (decl->initial_value)
               {
@@ -94,6 +106,17 @@ tinyopt_stab_init (TinyOptASTNode_t *node, TinyOptStab_t *stab, uint64_t loop_ha
             sym->id_hash = assign->hash;
             sym->loop_hash = loop_hash;
             sym->value = NULL;
+
+            if (assign->value && assign->value->type == NODE_FUNCTION_CALL)
+              {
+                TinyOptFunctionCallNode_t *fcall
+                    = (TinyOptFunctionCallNode_t *)assign->value;
+                if (fcall->arguments)
+                  {
+                    tinyopt_stab_init (fcall->arguments, stab, loop_hash,
+                                       scope);
+                  }
+              }
 
             if (assign->value)
               {
@@ -168,8 +191,10 @@ tinyopt_stab_init (TinyOptASTNode_t *node, TinyOptStab_t *stab, uint64_t loop_ha
     case NODE_WHILE_STATEMENT:
       {
         TinyOptWhileNode_t *while_node = (TinyOptWhileNode_t *)node;
-        tinyopt_stab_init (while_node->condition, stab, while_node->loop_hash, scope);
-        tinyopt_stab_init (while_node->body, stab, while_node->loop_hash, scope);
+        tinyopt_stab_init (while_node->condition, stab, while_node->loop_hash,
+                           scope);
+        tinyopt_stab_init (while_node->body, stab, while_node->loop_hash,
+                           scope);
         break;
       }
 
@@ -177,8 +202,10 @@ tinyopt_stab_init (TinyOptASTNode_t *node, TinyOptStab_t *stab, uint64_t loop_ha
       {
         TinyOptForNode_t *for_node = (TinyOptForNode_t *)node;
         tinyopt_stab_init (for_node->init, stab, for_node->loop_hash, scope);
-        tinyopt_stab_init (for_node->condition, stab, for_node->loop_hash, scope);
-        tinyopt_stab_init (for_node->increment, stab, for_node->loop_hash, scope);
+        tinyopt_stab_init (for_node->condition, stab, for_node->loop_hash,
+                           scope);
+        tinyopt_stab_init (for_node->increment, stab, for_node->loop_hash,
+                           scope);
         tinyopt_stab_init (for_node->body, stab, for_node->loop_hash, scope);
         break;
       }
@@ -534,4 +561,3 @@ free_stab (TinyOptStab_t *table)
   free (table->buckets);
   free (table);
 }
-

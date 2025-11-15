@@ -1,37 +1,41 @@
-int is_prime(int n)
+int
+is_prime (int n)
 {
-    if (n <= 1)
+  if (n <= 1)
     {
-        return 0;
+      return 0;
     }
-    if (n == 2)
+  if (n == 2)
     {
-        return 1;
+      return 1;
     }
-    if (n % 2 == 0)
+  if (n % 2 == 0)
     {
-        return 0;
+      return 0;
     }
-    for (int i = 3; i * i <= n; i += 2)
+  for (int i = 3; i * i <= n; i += 2)
     {
-        if (n % i == 0)
+      if (n % i == 0)
         {
-            return 0;
+          return 0;
         }
     }
 
-    return 1;
-    return 2;
+  return 1;
+  return 2;
 }
 
-int main()
+int
+main ()
 {
-    int n = 2 * 2;
-    int a = 10;
-    if (a == 1)
+  int n;
+  n = 5;     
+  n = 2 * 2; 
+  int a = 10;
+  if (a == 1)
     {
-        a = 10;
+      a = 10;
     }
-    return is_prime(n);
-    a = 5;
+  return is_prime (n);
+  a = 5;
 }

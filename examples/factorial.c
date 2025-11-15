@@ -1,23 +1,36 @@
-int factorial(int n)
+int
+factorial (int n)
 {
-    int a = 10;
-    if (n == 0 || n == 1)
+  if (1)
     {
-        return 1;
+      int x = 1;
     }
-    else
+  else
     {
-        return n * factorial(n - 1);
+      int folded_dead = 2 + 3;
     }
-    if (n) {
-        n = n;
+
+  int temp = 10;
+  temp = 20;
+
+  if (n <= 1)
+    {
+      return 1;
     }
+
+  return n * factorial (n - 1);
+
+  int unreachable = 42;
+  unreachable = unreachable + 1;
 }
 
-int main()
+int
+main (void)
 {
-    int n = 1 + 1;
-    int m = 2;
-    n = 10;
-    return factorial(n);
+  int n = 10;
+  int dead_liveness = 99;
+
+  int f = factorial (n);
+
+  return f;
 }
