@@ -14,7 +14,7 @@
  *⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⡎⠀⠀⠀⢸⠏⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
  *⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⠻⠿⠶⠂⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠛⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
  *  TinyOpt
- *  Copyright (c) 2025 leozamboni 
+ *  Copyright (c) 2025 leozamboni
  *
  *  this program is free software: you can redistribute it and/or modify
  *  it under the terms of the gnu general public license as published by
@@ -74,12 +74,16 @@ struct symbol_table
   size_t size;
 };
 
-
 uint64_t stab_hash_string (const char *str);
 TinyOptStab_t *stab_create (size_t size);
-Symbol *stab_get (TinyOptStab_t * table, const char *scope, const char *name);
-void stab_insert (TinyOptStab_t * table, Symbol * symbol, const char *scope);
+Symbol *stab_get (TinyOptStab_t *table, const char *scope, const char *name);
+void stab_insert (TinyOptStab_t *table, Symbol *symbol, const char *scope);
+void tinyopt_stab_init (TinyOptASTNode_t *node, TinyOptStab_t *stab,
+                        uint64_t loop_hash, const char *scope);
 void free_stab (TinyOptStab_t *table);
-
+SymbolValue *resolve_final_value (TinyOptStab_t *stab, const char *name,
+                                  const char *scope);
+SymbolValue *evaluate_expression_value (TinyOptASTNode_t *expr,
+                                        TinyOptStab_t *table, char *scope);
 
 #endif

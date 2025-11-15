@@ -41,10 +41,7 @@
 #include "opt/tinyopt_reachability.h"
 
 void
-optimize (TinyOpt_t **tinyopt);
-
-void remove_dead_code (TinyOptASTNode_t *node);
-void set_symtab (TinyOptASTNode_t *node, TinyOptStab_t *stab, uint64_t loop_hash,
-                 const char *scope);
+tinyopt_optimize (TinyOpt_t **tinyopt);
+void tinyopt_remove_dead_code (TinyOptASTNode_t *node);
 
 #endif

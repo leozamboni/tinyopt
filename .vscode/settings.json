@@ -29,6 +29,7 @@
         "tinyopt_liveness.h": "c",
         "tinyopt.h": "c",
         "tinyopt_dead_store.h": "c",
-        "tinyopt_empty_blocks.h": "c"
+        "tinyopt_empty_blocks.h": "c",
+        "tinyopt_reachability.h": "c"
     }
 }

@@ -43,15 +43,15 @@ main (int argc, char **argv)
 {
 
   TinyOpt_t *tinyopt;
-  init (&tinyopt);
-  flags (&tinyopt, argc, argv);
-  compile (&tinyopt);
-  free_tinyopt (&tinyopt);
+  tinyopt_init (&tinyopt);
+  tinyopt_flags (&tinyopt, argc, argv);
+  tinyopt_compile (&tinyopt);
+  tinyopt_free (&tinyopt);
   return EXIT_SUCCESS;
 }
 
 void
-init (TinyOpt_t **tinyopt)
+tinyopt_init (TinyOpt_t **tinyopt)
 {
   (*tinyopt) = malloc (sizeof (TinyOpt_t));
   (*tinyopt)->stab = stab_create (SYMBOL_TABLE_SIZE);
@@ -60,7 +60,7 @@ init (TinyOpt_t **tinyopt)
 }
 
 void
-flags (TinyOpt_t **tinyopt, int argc, char **argv)
+tinyopt_flags (TinyOpt_t **tinyopt, int argc, char **argv)
 {
   for (int i = 1; i < argc; i++)
     {
@@ -72,13 +72,13 @@ flags (TinyOpt_t **tinyopt, int argc, char **argv)
 }
 
 void
-compile (TinyOpt_t **tinyopt)
+tinyopt_compile (TinyOpt_t **tinyopt)
 {
   if (!(*tinyopt)->ast)
     return;
 
   yyparse ((*tinyopt)->ast);
-  optimize (&(*tinyopt));
+  tinyopt_optimize (&(*tinyopt));
 
   if ((*tinyopt)->flags->emit_cfg)
     {
@@ -90,7 +90,7 @@ compile (TinyOpt_t **tinyopt)
 }
 
 void
-free_tinyopt (TinyOpt_t **tinyopt)
+tinyopt_free (TinyOpt_t **tinyopt)
 {
   if ((*tinyopt)->ast)
     {

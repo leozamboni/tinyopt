@@ -50,9 +50,9 @@ struct tinyopt
   TinyOptStab_t *stab;
 };
 
-void init (TinyOpt_t **tinyopt);
-void flags (TinyOpt_t **tinyopt, int argc, char **argv);
-void compile (TinyOpt_t **tinyopt);
-void free_tinyopt (TinyOpt_t **tinyopt);
+void tinyopt_init (TinyOpt_t **tinyopt);
+void tinyopt_flags (TinyOpt_t **tinyopt, int argc, char **argv);
+void tinyopt_compile (TinyOpt_t **tinyopt);
+void tinyopt_free (TinyOpt_t **tinyopt);
 
-#endif // TINYOPT
+#endif
