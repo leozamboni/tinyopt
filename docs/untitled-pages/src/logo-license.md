@@ -1,7 +1,8 @@
 ---
-title: Unlicinsed bunnies
+title: Licença do logo
 ...
 
-Make sure that your bunny is licensed and registered.
+Logo
+====
 
-If you lose it, someone can then know who it belongs to, and return it to you!
+O logo do TinyOpt, quando presente no site, faz parte do projeto e está sujeito aos mesmos termos da licença do software (GPLv3), salvo indicação em contrário no repositório.

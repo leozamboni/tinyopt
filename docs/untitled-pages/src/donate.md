@@ -1,13 +1,13 @@
 ---
-title: Donate to bunnies
+title: Apoie o projeto
 x-toc-enable: true
 ...
 
-Introduction
-============
+Apoio
+=====
 
-Just buy a bunny.
+O TinyOpt é software livre. A melhor forma de apoiar o projeto é:
 
-We want you to buy a bunny. Not a real one, but a toy of one. Keeping real
-bunnies locked up is unethical. Bunnies want to be free, so that they can
-sell you more toys (of themselves) to fund their activities.
+- Usar, estudar e reportar problemas
+- Contribuir com código ou documentação
+- Compartilhar o repositório: <https://github.com/leozamboni/tiny-opt>

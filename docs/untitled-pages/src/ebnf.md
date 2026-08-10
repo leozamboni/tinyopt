@@ -1,7 +1,10 @@
 ---
-title: Extended Backus–Naur form
+title: EBNF — gramática do TinyOpt
 x-toc-enable: true
 ...
+
+A linguagem aceita pelo TinyOpt é um subconjunto de C. Gramática em EBNF:
+
 
 ```
 program ::= { statement } ;

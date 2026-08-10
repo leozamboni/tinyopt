@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt">
 <head>
   <meta charset="utf-8">
-  <meta name="generator" content="pandoc">
+  <meta name="generator" content="tinyopt-docs">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-  <title>Bunnies – Extended Backus–Naur form</title>
+  <title>TinyOpt — Extended Backus–Naur form</title>
   <link rel="stylesheet" href="global.css">
 <link rel="alternate" type="application/rss+xml" title="RSS Feed" href="/feed.xml"/>
 </head>
@@ -16,8 +16,8 @@
 </div>
 <ul>
 <li><a href="/tinyopt">Home</a></li>
-<li><a href="/tinyopt/faq.html">Documentação</a></li>
-<li><a href="/tinyopt/faq.html">Guia de início rápido</a></li>
+<li><a href="/tinyopt/doc.html">Documentação</a></li>
+<li><a href="/tinyopt/doc.html">Guia de início rápido</a></li>
 <li><a href="/tinyopt/ebnf.html">EBNF</a></li>
 <li><a href="/tinyopt/download.html">GitHub</a></li>
 <li><a href="/tinyopt/tasks/">TODO</a></li>
@@ -25,7 +25,10 @@
 </ul>
 <hr/>
 </header>
-<pre><code>program ::= { statement } ;
+
+
+<pre><code class="language-">
+program ::= { statement } ;
 
 statement ::=
       declaration &quot;;&quot;                 -- declaração de variável/função (assinatura)
@@ -130,13 +133,13 @@ function_def ::=
 parameter_list ::=
       declaration { &quot;,&quot; declaration }
     ;
+
 </code></pre>
 <div id="footer">
 <hr />
 <hr />
 </div>
-<p><a href="http://nowhere/src/ebnf.md"
-class="uri">http://nowhere/src/ebnf.md</a></p>
+
 </div>
 </body>
 </html>

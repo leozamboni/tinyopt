@@ -1,26 +1,12 @@
 ---
-title: Buy a bunny
+title: Recursos
+x-toc-enable: true
 ...
 
-These sales fund bunnies
-==========================
+Recursos relacionados
+=====================
 
-In the past, there was Toys R Us.
-
-Alas, they no longer exist, but you can probably find a local toy store that
-sells bunnies.
-
-Bunnies need a home. They are manufactured in large number, and they all need
-a loving companion!
-
-Love your bunny
----------------
-
-Your bunny hates being left alone. Keep it with you at all times.
-
-Buy a bunny!
-------------
-
-Don't buy a real bunny, because keeping bunnies locked up is unethical.
-
-Instead, buy a plushy doll in the image of a bunny, from your local toy store.
+- Código-fonte: <https://github.com/leozamboni/tiny-opt>
+- Gramática: [EBNF](ebnf.md)
+- Documentação: [Documentação](doc.md)
+- Licença: [GPLv3](license.md)

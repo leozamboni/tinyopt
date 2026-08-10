@@ -1,12 +1,17 @@
 ---
-title: Tasks
+title: TODO
 x-toc-enable: true
 ...
 
-Every bunny is different.
+Tarefas
+=======
 
-Have you spoken to your bunny today?
+Itens em aberto para evolução do TinyOpt:
 
-Ask your bunny what your bunny needs.
+- Expandir a cobertura de testes automatizados
+- Documentar cada pass de otimização com exemplos antes/depois
+- Melhorar a emissão DOT do CFG (rótulos e layout)
+- Avaliar suporte a mais construções da linguagem C
+- Integrar benchmarks (`tests/`) à documentação de desempenho
 
-Respect your bunny.
+Histórico do site: [notas](202105xx.md).

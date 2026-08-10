@@ -54,8 +54,8 @@ $if(date)$
 $endif$
 <ul>
 <li><a href="/tinyopt">Home</a></li>
-<li><a href="/tinyopt/faq.html">Documentação</a></li>
-<li><a href="/tinyopt/faq.html">Guia de início rápido</a></li>
+<li><a href="/tinyopt/doc.html">Documentação</a></li>
+<li><a href="/tinyopt/doc.html">Guia de início rápido</a></li>
 <li><a href="/tinyopt/ebnf.html">EBNF</a></li>
 <li><a href="/tinyopt/download.html">GitHub</a></li>
 <li><a href="/tinyopt/tasks/">TODO</a></li>

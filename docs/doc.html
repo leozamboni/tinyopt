@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="utf-8">
+  <meta name="generator" content="tinyopt-docs">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>TinyOpt — Documentação</title>
+  <link rel="stylesheet" href="global.css">
+<link rel="alternate" type="application/rss+xml" title="RSS Feed" href="/feed.xml"/>
+</head>
+<body>
+<div class="page">
+<header>
+<div class="title">
+<h1 class="title">Documentação</h1>
+</div>
+<ul>
+<li><a href="/tinyopt">Home</a></li>
+<li><a href="/tinyopt/doc.html">Documentação</a></li>
+<li><a href="/tinyopt/doc.html">Guia de início rápido</a></li>
+<li><a href="/tinyopt/ebnf.html">EBNF</a></li>
+<li><a href="/tinyopt/download.html">GitHub</a></li>
+<li><a href="/tinyopt/tasks/">TODO</a></li>
+<li><strong><a href="/tinyopt/contact.html">Contato</a></strong></li>
+</ul>
+<hr/>
+</header>
+<nav id="TOC">
+<h1>Navigate this page:</h1>
+<ul>
+<li><a href="#guia-de-início-rápido" id="toc-guia-de-início-rápido">Guia de início rápido</a></li>
+  <li><a href="#dependências" id="toc-dependências">Dependências</a></li>
+  <li><a href="#compilação" id="toc-compilação">Compilação</a></li>
+  <li><a href="#uso-básico" id="toc-uso-básico">Uso básico</a></li>
+  <li><a href="#exemplos" id="toc-exemplos">Exemplos</a></li>
+<li><a href="#arquitetura" id="toc-arquitetura">Arquitetura</a></li>
+  <li><a href="#pipeline" id="toc-pipeline">Pipeline</a></li>
+  <li><a href="#estrutura-de-módulos" id="toc-estrutura-de-módulos">Estrutura de módulos</a></li>
+  <li><a href="#passes-de-otimização" id="toc-passes-de-otimização">Passes de otimização</a></li>
+  <li><a href="#cfg" id="toc-cfg">CFG</a></li>
+<li><a href="#linguagem-suportada" id="toc-linguagem-suportada">Linguagem suportada</a></li>
+<li><a href="#perguntas-frequentes" id="toc-perguntas-frequentes">Perguntas frequentes</a></li>
+  <li><a href="#o-tinyopt-gera-executáveis" id="toc-o-tinyopt-gera-executáveis">O TinyOpt gera executáveis?</a></li>
+  <li><a href="#o-código-otimizado-é-semanticamente-equivalente" id="toc-o-código-otimizado-é-semanticamente-equivalente">O código otimizado é semanticamente equivalente?</a></li>
+  <li><a href="#como-contribuir" id="toc-como-contribuir">Como contribuir?</a></li>
+  <li><a href="#qual-é-a-licença" id="toc-qual-é-a-licença">Qual é a licença?</a></li>
+</ul>
+</nav>
+<div class="pagetext">
+<div class="h"><h1 id="guia-de-início-rápido">Guia de início rápido</h1><a aria-hidden="true" href="#guia-de-início-rápido">[link]</a></div>
+<div class="h"><h2 id="dependências">Dependências</h2><a aria-hidden="true" href="#dependências">[link]</a></div>
+<ul>
+<li>GCC (C99)</li>
+<li>flex</li>
+<li>bison</li>
+<li>make</li>
+</ul>
+<div class="h"><h2 id="compilação">Compilação</h2><a aria-hidden="true" href="#compilação">[link]</a></div>
+<pre><code class="language-">
+make
+</code></pre>
+<p>Isso gera o binário <code>tinyopt</code> na raiz do repositório.</p>
+<div class="h"><h2 id="uso-básico">Uso básico</h2><a aria-hidden="true" href="#uso-básico">[link]</a></div>
+<p>O TinyOpt lê o programa pela entrada padrão, aplica as otimizações e imprime o código otimizado na saída padrão:</p>
+<pre><code class="language-">
+./tinyopt &lt; examples/factorial.c
+</code></pre>
+<p>Para emitir o grafo de fluxo de controle (CFG) em formato DOT (Graphviz):</p>
+<pre><code class="language-">
+./tinyopt --cfg &lt; examples/factorial.c
+</code></pre>
+<div class="h"><h2 id="exemplos">Exemplos</h2><a aria-hidden="true" href="#exemplos">[link]</a></div>
+<p>Há programas de demonstração em <code>examples/</code>:</p>
+<table>
+<thead><tr>
+<th>Arquivo</th>
+<th>Foco</th>
+</tr></thead><tbody>
+<tr>
+<td><code>assig.c</code></td>
+<td>Atribuições</td>
+</tr>
+<tr>
+<td><code>conditionals.c</code></td>
+<td>Condicionais com folding</td>
+</tr>
+<tr>
+<td><code>loops.c</code></td>
+<td>Laços</td>
+</tr>
+<tr>
+<td><code>functions.c</code></td>
+<td>Funções</td>
+</tr>
+<tr>
+<td><code>factorial.c</code></td>
+<td>Dead code + recursão</td>
+</tr>
+<tr>
+<td><code>fibonacci.c</code></td>
+<td>Laços e liveness</td>
+</tr>
+<tr>
+<td><code>gcd.c</code></td>
+<td>Algoritmo clássico</td>
+</tr>
+<tr>
+<td><code>power.c</code></td>
+<td>Variáveis mortas</td>
+</tr>
+<tr>
+<td><code>prime.c</code></td>
+<td>Condicionais e laços</td>
+</tr>
+</tbody></table>
+<div class="h"><h1 id="arquitetura">Arquitetura</h1><a aria-hidden="true" href="#arquitetura">[link]</a></div>
+<div class="h"><h2 id="pipeline">Pipeline</h2><a aria-hidden="true" href="#pipeline">[link]</a></div>
+<p>O fluxo de compilação em <code>tinyopt_compile</code> é:</p>
+<ol>
+<li><strong>Análise léxica</strong> (<code>lexer.l</code> / flex)</li>
+<li><strong>Análise sintática</strong> (<code>parser.y</code> / bison) → AST</li>
+<li><strong>Otimização</strong> (<code>tinyopt_optimize</code> em <code>tinyopt_core.c</code>)</li>
+<li><strong>Emissão</strong> do código otimizado ou do CFG em DOT</li>
+</ol>
+<div class="h"><h2 id="estrutura-de-módulos">Estrutura de módulos</h2><a aria-hidden="true" href="#estrutura-de-módulos">[link]</a></div>
+<pre><code class="language-">
+tinyopt.c          — entrada, flags e orquestração
+tinyopt_ast.*      — árvore sintática abstrata
+tinyopt_stab.*     — tabela de símbolos
+tinyopt_core.*     — pipeline de otimização e poda de dead code
+tinyopt_cfg.*      — construção do CFG
+tinyopt_dot_cfg.*  — emissão DOT do CFG
+tinyopt_code.*     — pretty-print do código otimizado
+opt/               — passes de otimização
+</code></pre>
+<div class="h"><h2 id="passes-de-otimização">Passes de otimização</h2><a aria-hidden="true" href="#passes-de-otimização">[link]</a></div>
+<p>A ordem em <code>tinyopt_optimize</code> é:</p>
+<ol>
+<li><strong>Constant folding</strong> (<code>opt/tinyopt_folding.c</code>)  </li>
+</ol>
+<p>Avalia em tempo de compilação expressões e condições com operandos constantes.</p>
+<ol>
+<li><strong>Tabela de símbolos</strong> (<code>tinyopt_stab_init</code>)  </li>
+</ol>
+<p>Coleta declarações e valores conhecidos por escopo.</p>
+<ol>
+<li><strong>Reachability</strong> (<code>opt/tinyopt_reachability.c</code>)  </li>
+</ol>
+<p>Marca ramos inalcançáveis (ex.: <code>if (0)</code>, código após <code>return</code>).</p>
+<ol>
+<li><strong>Liveness</strong> (<code>opt/tinyopt_liveness.c</code>)  </li>
+</ol>
+<p>Análise de vivacidade sobre o CFG; marca atribuições e declarações mortas.</p>
+<ol>
+<li><strong>Empty blocks</strong> (<code>opt/tinyopt_empty_blocks.c</code>)  </li>
+</ol>
+<p>Marca blocos vazios ou compostos apenas por código morto.</p>
+<ol>
+<li><strong>Remoção</strong> (<code>tinyopt_remove_dead_code</code>)  </li>
+</ol>
+<p>Remove da AST os nós marcados com <code>is_dead_code</code>.</p>
+<div class="h"><h2 id="cfg">CFG</h2><a aria-hidden="true" href="#cfg">[link]</a></div>
+<p>O CFG (<code>tinyopt_cfg.h</code>) modela o fluxo com nós ligados por <code>succ_true</code> / <code>succ_false</code>. É usado pela análise de liveness e pode ser visualizado com <code>--cfg</code> + Graphviz:</p>
+<pre><code class="language-">
+./tinyopt --cfg &lt; examples/gcd.c | dot -Tpng -o cfg.png
+</code></pre>
+<div class="h"><h1 id="linguagem-suportada">Linguagem suportada</h1><a aria-hidden="true" href="#linguagem-suportada">[link]</a></div>
+<p>O TinyOpt aceita um <strong>subconjunto de C</strong> com:</p>
+<ul>
+<li>Tipos: <code>int</code>, <code>float</code>, <code>char</code>, <code>void</code> (e arrays unidimensionais)</li>
+<li>Declarações, atribuições (<code>=</code>, <code>+=</code>, <code>-=</code>, <code>*=</code>, <code>/=</code>, <code>%=</code>, <code>++</code>, <code>--</code>)</li>
+<li>Condicionais (<code>if</code> / <code>else</code>)</li>
+<li>Laços (<code>while</code>, <code>for</code>)</li>
+<li>Funções (definição e chamada)</li>
+<li><code>return</code>, <code>break</code>, <code>continue</code></li>
+<li>Expressões aritméticas e relacionais / lógicas</li>
+</ul>
+<p>A gramática completa está na página <a href="ebnf.html">EBNF</a>.</p>
+<div class="h"><h1 id="perguntas-frequentes">Perguntas frequentes</h1><a aria-hidden="true" href="#perguntas-frequentes">[link]</a></div>
+<div class="h"><h2 id="o-tinyopt-gera-executáveis">O TinyOpt gera executáveis?</h2><a aria-hidden="true" href="#o-tinyopt-gera-executáveis">[link]</a></div>
+<p>Não. Ele analisa e otimiza a AST e reemite código-fonte (ou o CFG). Não há geração de assembly ou ligação.</p>
+<div class="h"><h2 id="o-código-otimizado-é-semanticamente-equivalente">O código otimizado é semanticamente equivalente?</h2><a aria-hidden="true" href="#o-código-otimizado-é-semanticamente-equivalente">[link]</a></div>
+<p>Sim, dentro do modelo adotado pelas análises (valores conhecidos estaticamente, pureza de expressões, etc.). O objetivo é didático: tornar as transformações observáveis no código.</p>
+<div class="h"><h2 id="como-contribuir">Como contribuir?</h2><a aria-hidden="true" href="#como-contribuir">[link]</a></div>
+<p>Veja <a href="contrib.html">Contribuindo</a> e o repositório no <a href="https://github.com/leozamboni/tiny-opt">GitHub</a>.</p>
+<div class="h"><h2 id="qual-é-a-licença">Qual é a licença?</h2><a aria-hidden="true" href="#qual-é-a-licença">[link]</a></div>
+<p>GPLv3. Detalhes em <a href="license.html">Licença</a>.</p>
+<div id="footer">
+<hr />
+<hr />
+</div>
+</div>
+</div>
+</body>
+</html>

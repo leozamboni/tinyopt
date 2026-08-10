@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt">
 <head>
   <meta charset="utf-8">
-  <meta name="generator" content="pandoc">
+  <meta name="generator" content="tinyopt-docs">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-  <title>Bunnies – Bunnies</title>
+  <title>TinyOpt — Contribuindo</title>
   <link rel="stylesheet" href="global.css">
 <link rel="alternate" type="application/rss+xml" title="RSS Feed" href="/feed.xml"/>
 </head>
@@ -12,12 +12,12 @@
 <div class="page">
 <header>
 <div class="title">
-<h1 class="title">Bunnies</h1>
+<h1 class="title">Contribuindo</h1>
 </div>
 <ul>
 <li><a href="/tinyopt">Home</a></li>
-<li><a href="/tinyopt/faq.html">Documentação</a></li>
-<li><a href="/tinyopt/faq.html">Guia de início rápido</a></li>
+<li><a href="/tinyopt/doc.html">Documentação</a></li>
+<li><a href="/tinyopt/doc.html">Guia de início rápido</a></li>
 <li><a href="/tinyopt/ebnf.html">EBNF</a></li>
 <li><a href="/tinyopt/download.html">GitHub</a></li>
 <li><a href="/tinyopt/tasks/">TODO</a></li>
@@ -25,13 +25,47 @@
 </ul>
 <hr/>
 </header>
-<p>Bunnies.</p>
+<nav id="TOC">
+<h1>Navigate this page:</h1>
+<ul>
+<li><a href="#como-contribuir" id="toc-como-contribuir">Como contribuir</a></li>
+  <li><a href="#passos" id="toc-passos">Passos</a></li>
+  <li><a href="#áreas-úteis" id="toc-áreas-úteis">Áreas úteis</a></li>
+  <li><a href="#formatação" id="toc-formatação">Formatação</a></li>
+  <li><a href="#diagrama-uml-opcional" id="toc-diagrama-uml-opcional">Diagrama UML (opcional)</a></li>
+</ul>
+</nav>
+<div class="pagetext">
+<div class="h"><h1 id="como-contribuir">Como contribuir</h1><a aria-hidden="true" href="#como-contribuir">[link]</a></div>
+<p>O TinyOpt é software livre (GPLv3). Contribuições de código, documentação, exemplos e testes são bem-vindas.</p>
+<div class="h"><h2 id="passos">Passos</h2><a aria-hidden="true" href="#passos">[link]</a></div>
+<ol>
+<li>Clone ou faça fork de <a href="https://github.com/leozamboni/tiny-opt" class="uri">https://github.com/leozamboni/tiny-opt</a></li>
+<li>Compile com <code>make</code> e valide com os exemplos em <code>examples/</code></li>
+<li>Implemente a alteração (preferencialmente em um branch)</li>
+<li>Abra um pull request</li>
+</ol>
+<div class="h"><h2 id="áreas-úteis">Áreas úteis</h2><a aria-hidden="true" href="#áreas-úteis">[link]</a></div>
+<ul>
+<li>Novos passes de otimização em <code>opt/</code></li>
+<li>Melhorias na análise de CFG / liveness</li>
+<li>Exemplos didáticos e testes</li>
+<li>Documentação em <code>docs/untitled-pages/src/</code></li>
+</ul>
+<div class="h"><h2 id="formatação">Formatação</h2><a aria-hidden="true" href="#formatação">[link]</a></div>
+<pre><code class="language-">
+make format
+</code></pre>
+<div class="h"><h2 id="diagrama-uml-opcional">Diagrama UML (opcional)</h2><a aria-hidden="true" href="#diagrama-uml-opcional">[link]</a></div>
+<pre><code class="language-">
+make uml
+</code></pre>
+<p>Requer <code>clang-uml</code> e <code>plantuml</code>.</p>
 <div id="footer">
 <hr />
 <hr />
 </div>
-<p><a href="http://nowhere/src/contrib.md"
-class="uri">http://nowhere/src/contrib.md</a></p>
+</div>
 </div>
 </body>
 </html>

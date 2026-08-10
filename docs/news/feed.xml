@@ -1,17 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0">
 <channel>
-<title>bunny news</title>
-<link>http://nowhere/news/</link>
-<description>news about bunnies</description>
+<title>Notícias TinyOpt</title>
+<link>https://leozamboni.github.io/tinyopt/news/</link>
+<description>Atualizações do TinyOpt</description>
 <item>
-<title>Bunnies removed from the Shark project</title>
-<link>http://nowhere/..//resignations.html</link>
-<description><p>Article: Bunnies removed from the Shark project</p><p>Web link: http://nowhere/..//resignations.html</p></description>
-</item>
-<item>
-<title>New Bunny release, ETA late April 2021 / early June 2021</title>
-<link>http://nowhere/..//bunny202104xx.html</link>
-<description><p>Article: New Bunny release, ETA late April 2021 / early June 2021</p><p>Web link: http://nowhere/..//bunny202104xx.html</p></description>
+<title>TinyOpt disponível</title>
+<link>https://leozamboni.github.io/tinyopt/news/tinyopt-intro.html</link>
+<description><p>Article: TinyOpt disponível</p></description>
 </item>
 </channel>
 </rss>

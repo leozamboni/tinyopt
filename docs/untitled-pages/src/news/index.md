@@ -1,20 +1,17 @@
 ---
-title: Bunny news
+title: Notícias
 x-toc-enable: true
 ...
 
-The bunnies have been busy!
+Novidades do TinyOpt
+====================
+
+Atualizações do projeto.
 
 -------------------------------------------------------------------------------
 
 
 Subscribe to RSS: [feed.xml](feed.xml)
 
-[Bunnies removed from the Shark project](news/resignations.md){.title}
-[30 March 2021]{.date}
-
-
-[New Bunny release, ETA late April 2021 / early June 2021](news/bunny202104xx.md){.title}
-[30 March 2021]{.date}
-
-
+[TinyOpt disponível](tinyopt-intro.md){.title}
+[1 January 2025]{.date}
